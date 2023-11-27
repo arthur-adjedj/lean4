@@ -64,3 +64,10 @@ def ex1 [BEq α] : BEq (Tree α) :=
 
 def ex2 [BEq α] : BEq (TreeList α) :=
   inferInstance
+
+structure Foo₂ where
+  a : List Nat
+  ha : ∀ i, i ∈ a → 0 < i
+deriving BEq
+
+deriving instance BEq for Subtype

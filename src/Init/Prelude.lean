@@ -892,11 +892,14 @@ axioms like being reflexive or agreeing with `=`. It is mainly intended for
 programming applications. See `LawfulBEq` for a version that requires that
 `==` and `=` coincide.
 -/
-class BEq (α : Type u) where
+class BEq (α : Sort u) where
   /-- Boolean equality, notated as `a == b`. -/
   beq : α → α → Bool
 
 open BEq (beq)
+
+instance {P : Prop} : BEq P where
+  beq _ _ := true
 
 instance [DecidableEq α] : BEq α where
   beq a b := decide (Eq a b)

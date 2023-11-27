@@ -57,6 +57,8 @@ where
             let b := mkIdent (← mkFreshUserName `b)
             ctorArgs1 := ctorArgs1.push a
             ctorArgs2 := ctorArgs2.push b
+            if ← isProof x then
+              continue --two proofs are always equal
             if (← inferType x).isAppOf indVal.name then
               rhs ← `($rhs && $(mkIdent auxFunName):ident $a:ident $b:ident)
             else

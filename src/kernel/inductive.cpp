@@ -765,9 +765,10 @@ public:
             recursor_rules rules  = mk_rec_rules(d_idx, Cs, minors, minor_idx);
             name rec_name         = mk_rec_name(m_ind_types[d_idx].get_name());
             names rec_lparams     = get_rec_lparams();
+            bool is_large_elim    = m_elim_level != mk_level_zero();
             m_env.add_core(constant_info(recursor_val(rec_name, rec_lparams, rec_ty, all,
                                                       m_nparams, m_nindices[d_idx], nmotives, nminors,
-                                                      rules, m_K_target, m_is_unsafe)));
+                                                      rules, m_K_target, is_large_elim, m_is_unsafe)));
         }
     }
 
@@ -1145,7 +1146,7 @@ environment environment::add_inductive(declaration const & d) const {
             new_env.add_core(constant_info(recursor_val(new_rec_name, rec_info.get_lparams(), new_rec_type,
                                                         all_ind_names, rec_val.get_nparams(), rec_val.get_nindices(), rec_val.get_nmotives(),
                                                         rec_val.get_nminors(), recursor_rules(new_rules),
-                                                        rec_val.is_k(), rec_val.is_unsafe())));
+                                                        rec_val.is_k(), rec_val.is_large_elim(), rec_val.is_unsafe())));
         };
         for (inductive_type const & ind_type : ind_d.get_types()) {
             constant_info ind_info = aux_env.get(ind_type.get_name());

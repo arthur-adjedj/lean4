@@ -20,4 +20,8 @@ def compatibleCtors (ctorName₁ ctorName₂ : Name) : MetaM Bool := do
     let (_, _, ctorType₂) ← forallMetaTelescope ctorInfo₂.type
     isDefEq ctorType₁ ctorType₂
 
+def isElimLevelZero (inductName : Name) : MetaM Bool := do
+    let recType ← inferType <| ← mkConstWithLevelParams <| inductName ++ "rec"
+    forallTelescopeReducing recType fun _ e => pure e.isProp
+
 end Lean.Meta

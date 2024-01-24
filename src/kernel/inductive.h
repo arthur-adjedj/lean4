@@ -67,7 +67,11 @@ inline expr to_cnstr_when_structure(environment const & env, name const & induct
     expr e_type = whnf(infer_type(e));
     if (!is_constant(get_app_fn(e_type), induct_name))
         return e;
-    if (whnf(infer_type(e_type)) == mk_Prop())
+    /* If the elimination level is 0, this means that the inductive type lives in Prop, 
+       and cannot have primitive projections.*/
+    name rec_name = mk_rec_name(induct_name);
+    recursor_val rec = env.get(rec_name).to_recursor_val();
+    if (!rec.is_large_elim())
         return e;
     return expand_eta_struct(env, e_type, e);
 }

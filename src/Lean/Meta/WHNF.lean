@@ -5,6 +5,7 @@ Authors: Leonardo de Moura
 -/
 import Lean.Structure
 import Lean.Util.Recognizers
+import Lean.Meta.Inductive
 import Lean.Meta.GetUnfoldableConst
 import Lean.Meta.FunInfo
 import Lean.Meta.Match.MatcherInfo
@@ -142,7 +143,7 @@ private def toCtorWhenStructure (inductName : Name) (major : Expr) : MetaM Expr 
       return major
     match majorType.getAppFn with
     | Expr.const d us =>
-      if (← whnfD (← inferType majorType)) == mkSort levelZero then
+      if ← isElimLevelZero inductName then
         return major -- We do not perform eta for propositions, see implementation in the kernel
       else
         let some ctorName ← getFirstCtor d | pure major

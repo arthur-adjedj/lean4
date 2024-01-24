@@ -339,13 +339,14 @@ structure recursor_val extends constant_val :=
 (nminors : nat)              -- Number of minor premises
 (rules : list recursor_rule) -- A reduction for each constructor
 (k : bool)                   -- It supports K-like reduction
+(is_large_elim : bool)       -- It supports large elimination (elimination into arbitrary Sorts)
 (is_unsafe : bool)
 */
 class recursor_val : public object_ref {
 public:
     recursor_val(name const & n, names const & lparams, expr const & type,
                  names const & all, unsigned nparams, unsigned nindices, unsigned nmotives,
-                 unsigned nminors, recursor_rules const & rules, bool k, bool is_unsafe);
+                 unsigned nminors, recursor_rules const & rules, bool k, bool is_large_elim, bool is_unsafe);
     recursor_val(recursor_val const & other):object_ref(other) {}
     recursor_val(recursor_val && other):object_ref(other) {}
     recursor_val & operator=(recursor_val const & other) { object_ref::operator=(other); return *this; }
@@ -361,6 +362,7 @@ public:
     unsigned get_major_idx() const { return get_nparams() + get_nmotives() + get_nminors() + get_nindices(); }
     recursor_rules const & get_rules() const { return static_cast<recursor_rules const &>(cnstr_get_ref(*this, 6)); }
     bool is_k() const;
+    bool is_large_elim() const;
     bool is_unsafe() const;
 };
 

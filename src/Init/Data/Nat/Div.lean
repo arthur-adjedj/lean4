@@ -43,7 +43,6 @@ theorem div_le_self (n k : Nat) : n / k ≤ n := by
   induction n using Nat.strongInductionOn with
   | ind n ih =>
     rw [div_eq]
-    -- Note: manual split to avoid Classical.em which is not yet defined
     cases (inferInstance : Decidable (0 < k ∧ k ≤ n)) with
     | isFalse h => simp [h]
     | isTrue h =>

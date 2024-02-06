@@ -1916,7 +1916,5 @@ def mkNot (p : Expr) : Expr := mkApp (mkConst ``Not) p
 def mkOr (p q : Expr) : Expr := mkApp2 (mkConst ``Or) p q
 /-- Return `p ∧ q` -/
 def mkAnd (p q : Expr) : Expr := mkApp2 (mkConst ``And) p q
-/-- Return `Classical.em p` -/
-def mkEM (p : Expr) : Expr := mkApp (mkConst ``Classical.em) p
 
 end Lean

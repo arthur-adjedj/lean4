@@ -333,12 +333,12 @@ attribute [local simp] Poly.denote_fuse
 
 theorem Poly.denote_mul (ctx : Context) (k : Nat) (p : Poly) : (p.mul k).denote ctx = k * p.denote ctx := by
   simp
-  cases h : k == 0 <;> simp
-  cases h : k == 1 <;> simp
+  cases h : k == 0 <;> simp [h]; case true => simp [eq_of_beq h]
+  cases h : k == 1 <;> simp [h]; case true => simp [eq_of_beq h]
   induction p with
   | nil  => simp
   | cons kv m ih => cases kv with | _ k' v => simp [ih]
-  
+
 
 private theorem eq_of_not_blt_eq_true (h₁ : ¬ (Nat.blt x y = true)) (h₂ : ¬ (Nat.blt y x = true)) : x = y :=
   have h₁ : ¬ x < y := fun h => h₁ (Nat.blt_eq.mpr h)
@@ -662,7 +662,7 @@ theorem Poly.of_isNonZero (ctx : Context) {p : Poly} (h : isNonZero p = true) : 
   | [] => contradiction
   | (k, v) :: p =>
     cases he : v == fixedVar <;> simp [he, isNonZero] at h ⊢
-    case true => 
+    case true =>
       simp [eq_of_beq he, Var.denote]; apply Nat.lt_of_succ_le; exact Nat.le_trans h (Nat.le_add_right ..)
     case false =>
       have ih := of_isNonZero ctx h

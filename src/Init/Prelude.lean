@@ -505,6 +505,25 @@ structure MProd (α β : Type u) where
   snd : β
 
 /--
+`Sigma β`, also denoted `Σ a : α, β a` or `(a : α) × β a`, is the type of dependent pairs
+whose first component is `a : α` and whose second component is `b : β a`
+(so the type of the second component can depend on the value of the first component).
+It is sometimes known as the dependent sum type, since it is the type level version
+of an indexed summation.
+-/
+structure Sigma {α : Type u} (β : α → Type v) where
+  /-- Constructor for a dependent pair. If `a : α` and `b : β a` then `⟨a, b⟩ : Sigma β`.
+  (This will usually require a type ascription to determine `β`
+  since it is not determined from `a` and `b` alone.) -/
+  mk ::
+  /-- The first component of a dependent pair. If `p : @Sigma α β` then `p.1 : α`. -/
+  fst : α
+  /-- The second component of a dependent pair. If `p : Sigma β` then `p.2 : β p.1`. -/
+  snd : β fst
+
+attribute [unbox] Sigma
+
+/--
 `And a b`, or `a ∧ b`, is the conjunction of propositions. It can be
 constructed and destructed like a pair: if `ha : a` and `hb : b` then
 `⟨ha, hb⟩ : a ∧ b`, and if `h : a ∧ b` then `h.left : a` and `h.right : b`.
@@ -693,42 +712,16 @@ export Inhabited (default)
 that is, there exists an element in the type. It differs from `Inhabited α`
 in that `Nonempty α` is a `Prop`, which means that it does not actually carry
 an element of `α`, only a proof that *there exists* such an element.
-Given `Nonempty α`, you can construct an element of `α` *nonconstructively*
-using `Classical.choice`.
+Given `Nonempty α`, you cannot construct an element of `α` *constructively*.
 -/
 class inductive Nonempty (α : Sort u) : Prop where
   /-- If `val : α`, then `α` is nonempty. -/
   | intro (val : α) : Nonempty α
 
 /--
-**The axiom of choice**. `Nonempty α` is a proof that `α` has an element,
-but the element itself is erased. The axiom `choice` supplies a particular
-element of `α` given only this proof.
-
-The textbook axiom of choice normally makes a family of choices all at once,
-but that is implied from this formulation, because if `α : ι → Type` is a
-family of types and `h : ∀ i, Nonempty (α i)` is a proof that they are all
-nonempty, then `fun i => Classical.choice (h i) : ∀ i, α i` is a family of
-chosen elements. This is actually a bit stronger than the ZFC choice axiom;
-this is sometimes called "[global choice](https://en.wikipedia.org/wiki/Axiom_of_global_choice)".
-
-In Lean, we use the axiom of choice to derive the law of excluded middle
-(see `Classical.em`), so it will often show up in axiom listings where you
-may not expect. You can use `#print axioms my_thm` to find out if a given
-theorem depends on this or other axioms.
-
-This axiom can be used to construct "data", but obviously there is no algorithm
-to compute it, so Lean will require you to mark any definition that would
-involve executing `Classical.choice` or other axioms as `noncomputable`, and
-will not produce any executable code for such definitions.
--/
-axiom Classical.choice {α : Sort u} : Nonempty α → α
-
-/--
 The elimination principle for `Nonempty α`. If `Nonempty α`, and we can
 prove `p` given any element `x : α`, then `p` holds. Note that it is essential
-that `p` is a `Prop` here; the version with `p` being a `Sort u` is equivalent
-to `Classical.choice`.
+that `p` is a `Prop` here.
 -/
 protected def Nonempty.elim {α : Sort u} {p : Prop} (h₁ : Nonempty α) (h₂ : α → p) : p :=
   match h₁ with
@@ -736,19 +729,6 @@ protected def Nonempty.elim {α : Sort u} {p : Prop} (h₁ : Nonempty α) (h₂ 
 
 instance {α : Sort u} [Inhabited α] : Nonempty α :=
   ⟨default⟩
-
-/--
-A variation on `Classical.choice` that uses typeclass inference to
-infer the proof of `Nonempty α`.
--/
-noncomputable def Classical.ofNonempty {α : Sort u} [Nonempty α] : α :=
-  Classical.choice inferInstance
-
-instance (α : Sort u) {β : Sort v} [Nonempty β] : Nonempty (α → β) :=
-  Nonempty.intro fun _ => Classical.ofNonempty
-
-instance (α : Sort u) {β : α → Sort v} [(a : α) → Nonempty (β a)] : Nonempty ((a : α) → β a) :=
-  Nonempty.intro fun _ => Classical.ofNonempty
 
 instance : Inhabited (Sort u) where
   default := PUnit
@@ -778,11 +758,11 @@ It is mainly used in constant declarations where we wish to introduce a type
 and simultaneously assert that it is nonempty, but otherwise make the type
 opaque.
 -/
-def NonemptyType := Subtype fun α : Type u => Nonempty α
+def NonemptyType :=  Sigma fun α : Type u => Inhabited α
 
 /-- The underlying type of a `NonemptyType`. -/
 abbrev NonemptyType.type (type : NonemptyType.{u}) : Type u :=
-  type.val
+  type.1
 
 /-- `NonemptyType` is inhabited, because `PUnit` is a nonempty type. -/
 instance : Inhabited NonemptyType.{u} where
@@ -4402,7 +4382,7 @@ private opaque MethodsRefPointed : NonemptyType.{0}
 
 private def MethodsRef : Type := MethodsRefPointed.type
 
-instance : Nonempty MethodsRef := MethodsRefPointed.property
+instance : Inhabited MethodsRef := MethodsRefPointed.2
 
 /-- The read-only context for the `MacroM` monad. -/
 structure Context where

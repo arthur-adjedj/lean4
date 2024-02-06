@@ -127,25 +127,6 @@ inductive PSum (α : Sort u) (β : Sort v) where
 @[inherit_doc] infixr:30 " ⊕' " => PSum
 
 /--
-`Sigma β`, also denoted `Σ a : α, β a` or `(a : α) × β a`, is the type of dependent pairs
-whose first component is `a : α` and whose second component is `b : β a`
-(so the type of the second component can depend on the value of the first component).
-It is sometimes known as the dependent sum type, since it is the type level version
-of an indexed summation.
--/
-structure Sigma {α : Type u} (β : α → Type v) where
-  /-- Constructor for a dependent pair. If `a : α` and `b : β a` then `⟨a, b⟩ : Sigma β`.
-  (This will usually require a type ascription to determine `β`
-  since it is not determined from `a` and `b` alone.) -/
-  mk ::
-  /-- The first component of a dependent pair. If `p : @Sigma α β` then `p.1 : α`. -/
-  fst : α
-  /-- The second component of a dependent pair. If `p : Sigma β` then `p.2 : β p.1`. -/
-  snd : β fst
-
-attribute [unbox] Sigma
-
-/--
 `PSigma β`, also denoted `Σ' a : α, β a` or `(a : α) ×' β a`, is the type of dependent pairs
 whose first component is `a : α` and whose second component is `b : β a`
 (so the type of the second component can depend on the value of the first component).
@@ -365,7 +346,7 @@ structure Task (α : Type u) : Type u where
   /-- If `task : Task α` then `task.get : α` blocks the current thread until the
   value is available, and then returns the result of the task. -/
   get : α
-  deriving Inhabited, Nonempty
+  deriving Inhabited
 
 attribute [extern "lean_task_pure"] Task.pure
 attribute [extern "lean_task_get_own"] Task.get

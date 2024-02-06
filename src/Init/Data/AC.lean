@@ -5,7 +5,6 @@ Authors: Dany Fabian
 -/
 
 prelude
-import Init.Classical
 import Init.Data.List
 
 namespace Lean.Data.AC

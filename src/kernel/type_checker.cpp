@@ -6,6 +6,7 @@ Author: Leonardo de Moura
 */
 #include <utility>
 #include <vector>
+#include <chrono>
 #include "runtime/interrupt.h"
 #include "runtime/sstream.h"
 #include "runtime/flet.h"
@@ -19,6 +20,8 @@ Author: Leonardo de Moura
 #include "kernel/for_each_fn.h"
 #include "kernel/quot.h"
 #include "kernel/inductive.h"
+
+using namespace std::chrono;
 
 namespace lean {
 static name * g_kernel_fresh = nullptr;
@@ -508,8 +511,15 @@ optional<constant_info> type_checker::is_delta(expr const & e) const {
 optional<expr> type_checker::unfold_definition_core(expr const & e) {
     if (is_constant(e)) {
         if (auto d = is_delta(e)) {
-            if (length(const_levels(e)) == d->get_num_lparams())
-                return some_expr(instantiate_value_lparams(*d, const_levels(e)));
+            if (length(const_levels(e)) == d->get_num_lparams()){
+                auto start = high_resolution_clock::now();
+                expr const & e2 = instantiate_value_lparams(*d, const_levels(e));
+                auto stop = high_resolution_clock::now();
+                auto duration = duration_cast<microseconds>(stop - start);
+                std::cout << duration.count() << ", " << e << "\n";
+                return some_expr(e2);
+            }
+
         }
     }
     return none_expr();

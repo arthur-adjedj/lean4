@@ -20,6 +20,7 @@ Author: Leonardo de Moura
 #include "kernel/for_each_fn.h"
 #include "kernel/quot.h"
 #include "kernel/inductive.h"
+#include "type_checker.h"
 
 using namespace std::chrono;
 
@@ -157,12 +158,52 @@ expr type_checker::infer_pi(expr const & _e, bool infer_only) {
     return mk_sort(r);
 }
 
+
+
+bool type_checker::check_lambda(expr const & e,expr const & ty) { 
+    flet<local_ctx> save_lctx(m_lctx, m_lctx);
+    expr type = whnf(ty);
+    if (!is_pi(type)) 
+        throw function_expected_exception(env(), m_lctx, type);
+    if (!is_def_eq(binding_domain(type),binding_domain(e)))
+        throw def_type_mismatch_exception(env(), m_lctx, binding_name(e), binding_domain(type),binding_domain(e));
+    expr fvar = m_lctx.mk_local_decl(m_st->m_ngen, binding_name(e), binding_domain(e), binding_info(e));
+    expr body = instantiate(binding_body(e),fvar);
+    type   = instantiate(binding_body(type),fvar);
+    return check(body,type);
+}
+
+bool type_checker::check_sort(expr const & e,expr const & ty) { 
+    if (!is_sort(whnf(ty)))
+        return false;
+    else
+        return is_equivalent(mk_succ(sort_level(e)),sort_level(ty));
+}
+
+
+bool type_checker::check(expr const & _e,expr const & ty) { 
+    std::cout << "Checking " << _e << " : " << ty << "\n";
+    expr e = _e;
+    if (is_mdata(_e))
+        e = mdata_expr(_e);
+    bool b;
+    switch (e.kind()) {
+        /* TODO
+            case expr_kind::Proj:     r = infer_proj(e, infer_only); break;
+            case expr_kind::Let:      b = check_let(e, ty);            break;*/
+        case expr_kind::Sort:     b = check_sort(e,ty);              break;
+        case expr_kind::Lambda:   b = check_lambda(e, ty);           break;
+        default:                  b = is_def_eq(infer_type(e),ty);   break;
+    }
+    return b;
+}
+
 expr type_checker::infer_app(expr const & e, bool infer_only) {
     if (!infer_only) {
         expr f_type = ensure_pi_core(infer_type_core(app_fn(e), infer_only), e);
         expr a_type = infer_type_core(app_arg(e), infer_only);
         expr d_type = binding_domain(f_type);
-        if (!is_def_eq(a_type, d_type)) {
+        if (!check(app_arg(e), d_type)) {
             throw app_type_mismatch_exception(env(), m_lctx, e, f_type, a_type);
         }
         return instantiate(binding_body(f_type), app_arg(e));
@@ -291,7 +332,8 @@ expr type_checker::infer_proj(expr const & e, bool infer_only) {
 /** \brief Return type of expression \c e, if \c infer_only is false, then it also check whether \c e is type correct or not.
     \pre closed(e) */
 expr type_checker::infer_type_core(expr const & e, bool infer_only) {
-    if (is_bvar(e))
+    std::cout << "Infering " << e << "\n";
+    if (has_loose_bvars(e))
         throw kernel_exception(env(), "type checker does not support loose bound variables, replace them with free variables before invoking it");
 
     lean_assert(!has_loose_bvars(e));
@@ -511,15 +553,8 @@ optional<constant_info> type_checker::is_delta(expr const & e) const {
 optional<expr> type_checker::unfold_definition_core(expr const & e) {
     if (is_constant(e)) {
         if (auto d = is_delta(e)) {
-            if (length(const_levels(e)) == d->get_num_lparams()){
-                auto start = high_resolution_clock::now();
-                expr const & e2 = instantiate_value_lparams(*d, const_levels(e));
-                auto stop = high_resolution_clock::now();
-                auto duration = duration_cast<microseconds>(stop - start);
-                std::cout << duration.count() << ", " << e << "\n";
-                return some_expr(e2);
-            }
-
+            if (length(const_levels(e)) == d->get_num_lparams())
+                return some_expr(instantiate_value_lparams(*d, const_levels(e)));
         }
     }
     return none_expr();

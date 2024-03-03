@@ -155,6 +155,9 @@ public:
         return whnf_core(e, true, true);
     }
     optional<expr> unfold_definition(expr const & e);
+    bool check_lambda(expr const &e, expr const &ty);
+    bool check_sort(expr const &e, expr const &ty);
+    bool check(expr const &e, expr const &ty);
 };
 
 void initialize_type_checker();

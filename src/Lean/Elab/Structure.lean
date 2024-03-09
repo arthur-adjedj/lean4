@@ -59,6 +59,7 @@ structure StructView where
   type              : Syntax
   ctor              : StructCtorView
   fields            : Array StructFieldView
+  computedFields  : Array ComputedFieldView
 
 inductive StructFieldKind where
   | newField | copiedField | fromParent | subobject
@@ -799,6 +800,33 @@ private partial def mkCoercionToCopiedParent (levelParams : List Name) (params :
     else
       setReducibleAttribute declName
 
+private def applyComputedFields (view : StructView) : CommandElabM Unit := do
+  if view.computedFields.isEmpty then return
+
+  let mut computedFields := #[]
+  let mut computedFieldDefs := #[]
+  let declName := view.declName
+  for {ref, fieldId, type, matchAlts, modifiers, ..} in view.computedFields do
+    computedFieldDefs := computedFieldDefs.push <| ← do
+      let modifiers ← match modifiers with
+        | `(Lean.Parser.Command.declModifiersT| $[$doc:docComment]? $[$attrs:attributes]? $[$vis]? $[noncomputable]?) =>
+          `(Lean.Parser.Command.declModifiersT| $[$doc]? $[$attrs]? $[$vis]? noncomputable)
+        | _ => do
+          withRef modifiers do logError "unsupported modifiers for computed field"
+          `(Parser.Command.declModifiersT| noncomputable)
+      `($(⟨modifiers⟩):declModifiers
+        def%$ref $(mkIdent <| `_root_ ++ declName ++ fieldId):ident : $type $matchAlts:matchAlts)
+  let computedFieldNames := view.computedFields.map fun {fieldId, ..} => declName ++ fieldId
+  computedFields := computedFields.push (declName, computedFieldNames)
+  withScope (fun scope => { scope with
+      opts := scope.opts
+        |>.setBool `bootstrap.genMatcherCode false
+        |>.setBool `elaboratingComputedFields true}) <|
+    elabCommand <| ← `(mutual $computedFieldDefs* end)
+
+  liftTermElabM do Term.withDeclName declName do
+    ComputedFields.setComputedFields computedFields
+
 private def elabStructureView (view : StructView) : TermElabM Unit := do
   view.fields.forM fun field => do
     if field.declName == view.ctor.declName then
@@ -872,7 +900,9 @@ private def elabStructureView (view : StructView) : TermElabM Unit := do
         addDefaults lctx defaultAuxDecls
 
 /-
-leading_parser (structureTk <|> classTk) >> declId >> many Term.bracketedBinder >> optional «extends» >> Term.optType >> " := " >> optional structCtor >> structFields >> optDeriving
+leading_parser (structureTk <|> classTk) >> declId >> many Term.bracketedBinder >> optional «extends» >>
+Term.optType >> " := " >> optional structCtor >> structFields >>
+optional (ppDedent ppLine >> computedFields) >> optDeriving
 
 where
 def «extends» := leading_parser " extends " >> sepBy1 termParser ", "
@@ -892,9 +922,11 @@ def elabStructure (modifiers : Modifiers) (stx : Syntax) : CommandElabM Unit := 
   let exts      := stx[3]
   let parents   := if exts.isNone then #[] else exts[0][1].getSepArgs
   let optType   := stx[4]
-  let derivingClassViews ← getOptDerivingClasses stx[6]
+  let computedFields ← (stx[6].getOptional?.map (·[1].getArgs) |>.getD #[]).mapM fun cf => withRef cf do
+    return { ref := cf, modifiers := cf[0], fieldId := cf[1].getId, type := ⟨cf[3]⟩, matchAlts := ⟨cf[4]⟩ }
+  let derivingClassViews ← getOptDerivingClasses stx[7]
   let type ← if optType.isNone then `(Sort _) else pure optType[0][1]
-  let declName ←
+  let view ←
     runTermElabM fun scopeVars => do
       let scopeLevelNames ← Term.getLevelNames
       let ⟨name, declName, allUserLevelNames⟩ ← Elab.expandDeclId (← getCurrNamespace) scopeLevelNames declId modifiers
@@ -908,7 +940,7 @@ def elabStructure (modifiers : Modifiers) (stx : Syntax) : CommandElabM Unit := 
               Term.synthesizeSyntheticMVarsNoPostponing
               let params ← Term.addAutoBoundImplicits params
               let allUserLevelNames ← Term.getLevelNames
-              elabStructureView {
+              let view := {
                 ref := stx
                 modifiers
                 scopeLevelNames
@@ -921,11 +953,15 @@ def elabStructure (modifiers : Modifiers) (stx : Syntax) : CommandElabM Unit := 
                 type
                 ctor
                 fields
+                computedFields
               }
+              elabStructureView view
               unless isClass do
                 mkSizeOfInstances declName
                 mkInjectiveTheorems declName
-              return declName
+              return view
+  applyComputedFields view -- NOTE: any generated code before this line is invalid
+  let declName := view.declName
   derivingClassViews.forM fun view => view.applyHandlers #[declName]
   runTermElabM fun _ => Term.withDeclName declName do
     Term.applyAttributesAt declName modifiers.attrs .afterCompilation

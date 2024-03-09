@@ -165,6 +165,20 @@ v4.7.0
   This commit changes the app delaborator to try running app unexpanders on every prefix of an application, from longest to shortest prefix. For efficiency, it is careful to only try this when app delaborators do in fact exist for the head constant, and it also ensures arguments are only delaborated once. Then, in `(f + g) 1`, the `f + g` gets TermInfo registered for that subexpression, making it properly hoverable.
 
   [#3375](https://github.com/leanprover/lean4/pull/3375)
+* Add support for computed fields in structures. Example:
+  ```lean
+  structure Foo where
+    foo : Nat
+    bar : Fin foo
+    baz : True
+  with
+    @[computed_field]
+    hash : Foo → Nat
+      | ⟨n,bar,_⟩ =>
+          mixHash (Hashable.hash n) (Hashable.hash bar) |>.toNat
+  ```
+  Like with computed fields for inductive types,the result of the `Foo.hash` function is stored as an extra "computed" field in the structure.
+  `Foo.hash` accesses this field and thus runs in constant time.
 
 Breaking changes:
 * `Lean.withTraceNode` and variants got a stronger `MonadAlwaysExcept` assumption to

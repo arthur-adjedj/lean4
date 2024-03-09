@@ -168,8 +168,6 @@ def overrideComputedFields : M Unit := do
 
 def mkComputedFieldOverrides (declName : Name) (compFields : Array Name) : MetaM Unit := do
   let ind ← getConstInfoInduct declName
-  if ind.ctors.length < 2 then
-    throwError "computed fields require at least two constructors"
   let lparams := ind.levelParams.map mkLevelParam
   forallTelescope ind.type fun paramsIndices _ => do
   withLocalDeclD `x (mkAppN (mkConst ind.name lparams) paramsIndices) fun val => do

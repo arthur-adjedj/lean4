@@ -195,6 +195,7 @@ def «structure»          := leading_parser
     declId >>
     ppIndent (many (ppSpace >> Term.bracketedBinder) >> optional «extends» >> Term.optType) >>
     optional ((symbol " := " <|> " where ") >> optional structCtor >> structFields) >>
+    optional (ppDedent ppLine >> computedFields) >>
     optDeriving
 @[builtin_command_parser] def declaration := leading_parser
   declModifiers false >>

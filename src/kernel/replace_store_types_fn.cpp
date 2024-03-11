@@ -14,7 +14,7 @@ class replace_rec_store_types_fn {
     name_generator             m_ngen;
     local_ctx                  m_lctx;
     std::function<optional<expr>(local_ctx const &, expr const &, buffer<expr> &)> m_f;
-
+    // TODO, this shouldn't work, test a lot ??
     expr apply( expr const & e, buffer<expr> & fvar_types) {
         check_system("replace");
 

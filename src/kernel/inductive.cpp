@@ -833,6 +833,7 @@ struct elim_nested_inductive_result {
             e = instantiate(binding_body(e), As.back());
         }
         e = replace(e, [&](expr const & t, unsigned) {
+                std::cout <<"replacing in "<< t << "\n";
                 if (is_constant(t)) {
                     if (name const * rec_name = aux_rec_name_map.find(const_name(t))) {
                         return some_expr(mk_constant(*rec_name, const_levels(t)));
@@ -841,6 +842,7 @@ struct elim_nested_inductive_result {
                 expr const & fn = get_app_fn(t);
                 if (is_constant(fn)) {
                     if (pair<expr,unsigned> const * pack = m_aux2nested.find(const_name(fn))) {
+                        std::cout << "branch 1 " << fn << "\n";
                         expr nested               = pack->first;
                         unsigned n_additional_indices = pack->second;                        
                         buffer<expr> args;
@@ -853,6 +855,7 @@ struct elim_nested_inductive_result {
                         return some_expr(mk_app(new_t, args.size() - m_params.size(), args.data() + m_params.size()));
                     }
                     if (optional<pair<pair<expr,unsigned>, name>> r = get_nested_if_aux_constructor(aux_env, const_name(fn))) {
+                        std::cout << "branch 2 " << fn << "\n";
                         expr nested               = r->first.first;
                         unsigned n_additional_indices = r->first.second;
                         name auxI_name            = r->second;
@@ -863,14 +866,15 @@ struct elim_nested_inductive_result {
                         expr new_nested = instantiate_rev(abstract(nested, m_params.size(), m_params.data()), As.size(), As.data());
                         buffer<expr> I_args;
                         expr I = get_app_args(new_nested, I_args);
-                        for (unsigned i; i< n_additional_indices; i++) {
-                            I_args.pop_back();
-                        }                            
+                        // for (unsigned i; i < n_additional_indices; i++) {
+                        //     I_args.pop_back();
+                        // }   
                         std::cout << n_additional_indices << " additional indices\n";                      
                         lean_assert(is_constant(I));
                         name new_fn_name = const_name(fn).replace_prefix(auxI_name, const_name(I));
                         expr new_fn = mk_constant(new_fn_name, const_levels(I));
                         expr new_t  = mk_app(mk_app(new_fn, I_args), args.size() - m_params.size(), args.data() + m_params.size());
+                        std::cout << "Had : " << t << "\nGot : " << new_t << "\n";
                         return some_expr(new_t);
                     }
                 }

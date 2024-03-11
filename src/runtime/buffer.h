@@ -200,6 +200,13 @@ public:
             pop_back();
         lean_assert(size() == nsz);
     }
+    bool contains(T const & elem) {
+        for(unsigned i = 0; i < m_pos; i++) {
+            if (elem == m_buffer[i])
+                return true;
+        }
+        return false;
+    }
 };
 
 }

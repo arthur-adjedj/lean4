@@ -384,6 +384,24 @@ extern "C" LEAN_EXPORT uint8 lean_expr_has_loose_bvar(b_obj_arg e, b_obj_arg i) 
     return has_loose_bvar(TO_REF(expr, e), lean_unbox(i));
 }
 
+// TODO: use a more efficient structure to make checking for duplicates less expensive
+buffer<nat> loose_bvars(expr const & e) {
+    buffer<nat> bvars;
+    if (!has_loose_bvars(e))
+        return bvars;
+    for_each(e, [&](expr const & e, unsigned offset) {
+            if (false)
+                return true;
+            if (is_var(e) && bvar_idx(e) >= offset) {
+                nat bvar = bvar_idx(e)-nat(offset);
+                if (!bvars.contains(bvar))
+                    bvars.push_back(bvar);
+            }
+            return true; // continue search
+        });
+    return bvars;
+}
+
 expr lower_loose_bvars(expr const & e, unsigned s, unsigned d) {
     if (d == 0 || s >= get_loose_bvar_range(e))
         return e;

@@ -181,6 +181,14 @@ expr mk_app(unsigned num_args, expr const * args);
 inline expr mk_app(std::initializer_list<expr> const & l) { return mk_app(l.size(), l.begin()); }
 inline expr mk_app(buffer<expr> const & args) { return mk_app(args.size(), args.data()); }
 inline expr mk_app(expr const & f, buffer<expr> const & args) { return mk_app(f, args.size(), args.data()); }
+inline expr mk_app(expr const & f, buffer<nat> const & bvars) { 
+    buffer<expr> args;
+    for (unsigned i = 0; i < bvars.size(); i++) {
+        expr e = mk_bvar(bvars[i]);
+        args.push_back(e);
+    }
+    return mk_app(f, args); 
+}
 expr mk_app(expr const & f, list<expr> const & args);
 inline expr mk_app(expr const & e1, expr const & e2, expr const & e3) { return mk_app({e1, e2, e3}); }
 inline expr mk_app(expr const & e1, expr const & e2, expr const & e3, expr const & e4) { return mk_app({e1, e2, e3, e4}); }

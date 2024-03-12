@@ -833,7 +833,6 @@ struct elim_nested_inductive_result {
             e = instantiate(binding_body(e), As.back());
         }
         e = replace(e, [&](expr const & t, unsigned) {
-                std::cout <<"replacing in "<< t << "\n";
                 if (is_constant(t)) {
                     if (name const * rec_name = aux_rec_name_map.find(const_name(t))) {
                         return some_expr(mk_constant(*rec_name, const_levels(t)));
@@ -842,20 +841,16 @@ struct elim_nested_inductive_result {
                 expr const & fn = get_app_fn(t);
                 if (is_constant(fn)) {
                     if (pair<expr,unsigned> const * pack = m_aux2nested.find(const_name(fn))) {
-                        std::cout << "branch 1 " << fn << "\n";
                         expr nested               = pack->first;
                         unsigned n_additional_indices = pack->second;                        
                         buffer<expr> args;
                         get_app_args(t, args);
-                        for (unsigned i; i< n_additional_indices; i++) {
-                            args.pop_back();
-                        }
                         lean_assert(args.size() >= m_params.size());
-                        expr new_t = instantiate_rev(abstract(pack->first, m_params.size(), m_params.data()), As.size(), As.data());
-                        return some_expr(mk_app(new_t, args.size() - m_params.size(), args.data() + m_params.size()));
+                        expr  new_t = instantiate_rev(new_t,n_additional_indices,args.data());
+                              new_t = instantiate_rev(abstract(pack->first, m_params.size(), m_params.data()), As.size(), As.data());
+                        return some_expr(mk_app(new_t, args.size() - m_params.size() - n_additional_indices, args.data() + m_params.size()));
                     }
                     if (optional<pair<pair<expr,unsigned>, name>> r = get_nested_if_aux_constructor(aux_env, const_name(fn))) {
-                        std::cout << "branch 2 " << fn << "\n";
                         expr nested               = r->first.first;
                         unsigned n_additional_indices = r->first.second;
                         name auxI_name            = r->second;
@@ -864,17 +859,13 @@ struct elim_nested_inductive_result {
                         get_app_args(t, args);                    
                         lean_assert(args.size() >= m_params.size());
                         expr new_nested = instantiate_rev(abstract(nested, m_params.size(), m_params.data()), As.size(), As.data());
+                             new_nested = instantiate_rev(new_nested,n_additional_indices,args.data());
                         buffer<expr> I_args;
-                        expr I = get_app_args(new_nested, I_args);
-                        // for (unsigned i; i < n_additional_indices; i++) {
-                        //     I_args.pop_back();
-                        // }   
-                        std::cout << n_additional_indices << " additional indices\n";                      
+                        expr I = get_app_args(new_nested, I_args);   
                         lean_assert(is_constant(I));
                         name new_fn_name = const_name(fn).replace_prefix(auxI_name, const_name(I));
                         expr new_fn = mk_constant(new_fn_name, const_levels(I));
-                        expr new_t  = mk_app(mk_app(new_fn, I_args), args.size() - m_params.size(), args.data() + m_params.size());
-                        std::cout << "Had : " << t << "\nGot : " << new_t << "\n";
+                        expr new_t  = mk_app(mk_app(new_fn, I_args), args.size() - m_params.size()-n_additional_indices, args.data() + m_params.size());
                         return some_expr(new_t);
                     }
                 }
@@ -921,7 +912,9 @@ struct elim_nested_inductive_fn {
 
     expr replace_params(expr const & e, buffer<expr> const & As) {
         lean_assert(m_params.size() == As.size());
-        return instantiate_rev(abstract(e, As.size(), As.data()), m_params.size(), m_params.data());
+        expr res =  instantiate_rev(abstract(e, As.size(), As.data()), m_params.size(), m_params.data());
+        std::cout << "before replacing params:" << e << "\nafter replacing params:" << res << "\n";
+        return res;
     }
 
     /* IF `e` is of the form `I Ds is` where `I` is a nested inductive datatype (i.e., a previously declared inductive datatype),  
@@ -968,31 +961,31 @@ struct elim_nested_inductive_fn {
     }
 
     /* If `e` is a nested occurrence `I Ds is`, return `Iaux As is` */
-    optional<expr> replace_if_nested(local_ctx const & lctx, buffer<expr> const & As, expr const & e, buffer<expr> fvars_types) {
-        std::cout << "fvars : [";
-        for (unsigned i = 0; i < fvars_types.size(); i++) {
-            std::cout << fvars_types[i] << ",";
-        }
-        std::cout << "]\n";
+    optional<expr> replace_if_nested(local_ctx const & lctx, buffer<expr> const & As, expr const & e, buffer<expr> fvars) {
+        // std::cout << "fvars : [";
+        // for (unsigned i = 0; i < fvars.size(); i++) {
+        //     std::cout << fvars[i] << ",";
+        // }
+        // std::cout << "]\n";
         optional<pair<inductive_val,buffer<nat>>> I = is_nested_inductive_app(lctx, e);
         if (!I) return none_expr();
         /* `e` is of the form `I As is` where `As` are the parameters and `is` the indices */
         inductive_val I_val = I->first;
         buffer<nat> Is = I->second;
-        std::cout << "Is : [";
+        // std::cout << "Is : [";
+        // for (unsigned i = 0; i < Is.size(); i++) {
+        //     std::cout << Is[i] << ",";
+        // }
+        // std::cout << "]\n";
+        buffer<expr> lvars;
         for (unsigned i = 0; i < Is.size(); i++) {
-            std::cout << Is[i] << ",";
+            lvars.push_back(fvars[Is[i].get_small_value()]);
         }
-        std::cout << "]\n";
-        buffer<expr> local_vars_types;
-        for (unsigned i = 0; i < Is.size(); i++) {
-            local_vars_types.push_back(fvars_types[Is[i].get_small_value()]);
-        }
-        std::cout << "local_vars : [";
-        for (unsigned i = 0; i < local_vars_types.size(); i++) {
-            std::cout << local_vars_types[i] << ",";
-        }
-        std::cout << "]\n";        
+        // std::cout << "local vars : [";
+        // for (unsigned i = 0; i < lvars.size(); i++) {
+        //     std::cout << lvars[i] << ",";
+        // }
+        // std::cout << "]\n";        
         buffer<expr> args;
         expr const & fn       = get_app_args(e, args);
         name const & I_name   = const_name(fn);
@@ -1011,7 +1004,7 @@ struct elim_nested_inductive_fn {
                It is probably not needed, but if one day we decide to do it, we have to populate
                an auxiliary environment with the inductive datatypes we are defining since `p.first` and `Iparams`
                contain references to them. */
-            if (p.first.first == Iparams && p.first.second == local_vars_types.size()) { 
+            if (p.first.first == Iparams && true /* p.first.second == lvars.size()*/) { 
                 // TODO compare against whole added indice types, not just their number
                 auxI_name = p.second;
                 break;
@@ -1034,9 +1027,9 @@ struct elim_nested_inductive_fn {
                 name auxJ_name       = mk_unique_name(*g_nested + J_name);
                 expr auxJ_type       = instantiate_lparams(J_info.get_type(), J_info.get_lparams(), I_lvls);
                 auxJ_type            = instantiate_pi_params(auxJ_type, I_nparams, args.data());
-                auxJ_type            = lctx.mk_pi(local_vars_types, auxJ_type);
+                auxJ_type            = lctx.mk_pi(lvars, auxJ_type);
                 auxJ_type            = lctx.mk_pi(As, auxJ_type);
-                m_nested_aux.push_back(mk_pair(mk_pair(replace_params(JAs, As),local_vars_types.size()), auxJ_name));
+                m_nested_aux.push_back(mk_pair(mk_pair(replace_params(JAs, As),lvars.size()), auxJ_name));
                 if (J_name == I_name) {
                     /* Create result */
                     expr auxI = mk_constant(auxJ_name, m_lvls);
@@ -1051,8 +1044,9 @@ struct elim_nested_inductive_fn {
                     /* auxJ_cnstr_type still has references to `J`, this will be fixed later when we process it. */
                     expr auxJ_cnstr_type    = instantiate_lparams(J_cnstr_info.get_type(), J_cnstr_info.get_lparams(), I_lvls);
                     auxJ_cnstr_type         = instantiate_pi_params(auxJ_cnstr_type, I_nparams, args.data());
-                    auxJ_cnstr_type         = lctx.mk_pi(local_vars_types, auxJ_cnstr_type);
+                    auxJ_cnstr_type         = lctx.mk_pi(lvars, auxJ_cnstr_type);
                     auxJ_cnstr_type         = lctx.mk_pi(As, auxJ_cnstr_type);
+                    std::cout << auxJ_cnstr_name << " : " << auxJ_cnstr_type << "\n";
                     auxJ_constructors.push_back(constructor(auxJ_cnstr_name, auxJ_cnstr_type));
                 }
                 std::cout << auxJ_name << " : " << auxJ_type << "\n";
@@ -1065,7 +1059,6 @@ struct elim_nested_inductive_fn {
 
     /* Replace all nested inductive datatype occurrences in `e`. */
     expr replace_all_nested(local_ctx const & lctx, buffer<expr> const & As, expr const & e) {
-        std::cout << "replacing all nesteds in " << e << "\n";
         return replace_store_types(m_ngen, lctx, e, [&](local_ctx const & lctx,expr const & e,buffer<expr> buf) { return replace_if_nested(lctx, As, e, buf); });
     }
 
@@ -1171,7 +1164,9 @@ environment environment::add_inductive(declaration const & d) const {
             if (name const * new_name = aux_rec_name_map.find(rec_name))
                 new_rec_name = *new_name;
             constant_info rec_info = aux_env.get(rec_name);
+            std::cout << "OLD_REC " << rec_info.get_name() << " : " << rec_info.get_type() << "\n";
             expr new_rec_type      = res.restore_nested(rec_info.get_type(), aux_env, aux_rec_name_map);
+            std::cout << "REC " << rec_name << " : " << new_rec_type << "\n";
             recursor_val rec_val   = rec_info.to_recursor_val();
             buffer<recursor_rule> new_rules;
             for (recursor_rule const & rule : rec_val.get_rules()) {

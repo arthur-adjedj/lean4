@@ -845,10 +845,33 @@ struct elim_nested_inductive_result {
                         unsigned n_additional_indices = pack->second;                        
                         buffer<expr> args;
                         get_app_args(t, args);
+                        std::cout << fn << " [";
+                        for (unsigned i = 0; i < args.size(); i++) {
+                            std::cout << args[i] << ",";
+                        }
+                        std::cout << "] ->\n";                         
                         lean_assert(args.size() >= m_params.size());
-                        expr  new_t = instantiate_rev(new_t,n_additional_indices,args.data());
-                              new_t = instantiate_rev(abstract(pack->first, m_params.size(), m_params.data()), As.size(), As.data());
-                        return some_expr(mk_app(new_t, args.size() - m_params.size() - n_additional_indices, args.data() + m_params.size()));
+                        buffer<expr> add_args;
+                        for (unsigned i = 0; i < n_additional_indices; i++) {
+                            add_args.push_back(args[m_params.size()+i]); 
+                        }                   
+                        std::cout << "add_args :  [";
+                        for (unsigned i = 0; i < add_args.size(); i++) {
+                            std::cout << add_args[i] << ",";
+                        }
+                        std::cout << "]\n";                                  
+                        expr  new_t = instantiate_rev(abstract(pack->first, m_params.size(), m_params.data()), As.size(), As.data());
+                              new_t = instantiate_rev(nested,add_args);
+                        buffer<expr> real_args;
+                        for (unsigned i = 0; i < args.size()-m_params.size() - n_additional_indices; i++) {
+                            real_args.push_back(args[i+m_params.size()+n_additional_indices]); 
+                        }
+                        std::cout << new_t << " [";
+                        for (unsigned i = 0; i < real_args.size(); i++) {
+                            std::cout << real_args[i] << ",";
+                        }
+                        std::cout << "]\n";                           
+                        return some_expr(mk_app(new_t, real_args));
                     }
                     if (optional<pair<pair<expr,unsigned>, name>> r = get_nested_if_aux_constructor(aux_env, const_name(fn))) {
                         expr nested               = r->first.first;
@@ -865,7 +888,10 @@ struct elim_nested_inductive_result {
                         lean_assert(is_constant(I));
                         name new_fn_name = const_name(fn).replace_prefix(auxI_name, const_name(I));
                         expr new_fn = mk_constant(new_fn_name, const_levels(I));
-                        expr new_t  = mk_app(mk_app(new_fn, I_args), args.size() - m_params.size()-n_additional_indices, args.data() + m_params.size());
+                        for(unsigned i = 0; i < m_params.size() + n_additional_indices;i++) {
+                            args.pop_back();
+                        }
+                        expr new_t  = mk_app(mk_app(new_fn, I_args), args);
                         return some_expr(new_t);
                     }
                 }
@@ -962,30 +988,30 @@ struct elim_nested_inductive_fn {
 
     /* If `e` is a nested occurrence `I Ds is`, return `Iaux As is` */
     optional<expr> replace_if_nested(local_ctx const & lctx, buffer<expr> const & As, expr const & e, buffer<expr> fvars) {
-        // std::cout << "fvars : [";
-        // for (unsigned i = 0; i < fvars.size(); i++) {
-        //     std::cout << fvars[i] << ",";
-        // }
-        // std::cout << "]\n";
+        std::cout << "fvars : [";
+        for (unsigned i = 0; i < fvars.size(); i++) {
+            std::cout << fvars[i] << ",";
+        }
+        std::cout << "]\n";
         optional<pair<inductive_val,buffer<nat>>> I = is_nested_inductive_app(lctx, e);
         if (!I) return none_expr();
         /* `e` is of the form `I As is` where `As` are the parameters and `is` the indices */
         inductive_val I_val = I->first;
         buffer<nat> Is = I->second;
-        // std::cout << "Is : [";
-        // for (unsigned i = 0; i < Is.size(); i++) {
-        //     std::cout << Is[i] << ",";
-        // }
-        // std::cout << "]\n";
+        std::cout << "Is : [";
+        for (unsigned i = 0; i < Is.size(); i++) {
+            std::cout << Is[i] << ",";
+        }
+        std::cout << "]\n";
         buffer<expr> lvars;
         for (unsigned i = 0; i < Is.size(); i++) {
             lvars.push_back(fvars[Is[i].get_small_value()]);
         }
-        // std::cout << "local vars : [";
-        // for (unsigned i = 0; i < lvars.size(); i++) {
-        //     std::cout << lvars[i] << ",";
-        // }
-        // std::cout << "]\n";        
+        std::cout << "local vars : [";
+        for (unsigned i = 0; i < lvars.size(); i++) {
+            std::cout << lvars[i] << ",";
+        }
+        std::cout << "]\n";        
         buffer<expr> args;
         expr const & fn       = get_app_args(e, args);
         name const & I_name   = const_name(fn);
@@ -998,13 +1024,13 @@ struct elim_nested_inductive_fn {
         /* Replace `As` with `m_params` before searching at `m_nested_aux`.
            We need this step because we re-create parameters for each constructor with the correct binding info */
         expr Iparams = replace_params(IAs, As);
-        // TODO extend check to indices
         for (pair<pair<expr,unsigned>, name> const & p : m_nested_aux) { 
             /* Remark: we could have used `is_def_eq` here instead of structural equality.
                It is probably not needed, but if one day we decide to do it, we have to populate
                an auxiliary environment with the inductive datatypes we are defining since `p.first` and `Iparams`
                contain references to them. */
-            if (p.first.first == Iparams && true /* p.first.second == lvars.size()*/) { 
+            std::cout << p.first.first << "=?=" << Iparams << "\n";
+            if (p.first.first == Iparams) { 
                 // TODO compare against whole added indice types, not just their number
                 auxI_name = p.second;
                 break;
@@ -1164,9 +1190,9 @@ environment environment::add_inductive(declaration const & d) const {
             if (name const * new_name = aux_rec_name_map.find(rec_name))
                 new_rec_name = *new_name;
             constant_info rec_info = aux_env.get(rec_name);
-            std::cout << "OLD_REC " << rec_info.get_name() << " : " << rec_info.get_type() << "\n";
+            std::cout << "\nOLD_REC " << rec_info.get_name() << " :\n" << rec_info.get_type() << "\n\n";
             expr new_rec_type      = res.restore_nested(rec_info.get_type(), aux_env, aux_rec_name_map);
-            std::cout << "REC " << rec_name << " : " << new_rec_type << "\n";
+            std::cout << "\nREC " << rec_name << " :\n" << new_rec_type << "\n\n"; 
             recursor_val rec_val   = rec_info.to_recursor_val();
             buffer<recursor_rule> new_rules;
             for (recursor_rule const & rule : rec_val.get_rules()) {

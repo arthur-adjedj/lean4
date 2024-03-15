@@ -794,29 +794,29 @@ static name * g_nested_fresh = nullptr;
 struct elim_nested_inductive_result {
     name_generator                  m_ngen;
     buffer<expr>                    m_params;
-    name_map<pair<expr,unsigned>>   m_aux2nested; /* mapping from auxiliary type to nested inductive type. */
+    name_map<pair<expr,buffer<expr>>>   m_aux2nested; /* mapping from auxiliary type to nested inductive type. */
     declaration                     m_aux_decl;
 
-    elim_nested_inductive_result(name_generator const & ngen, buffer<expr> const & params, buffer<pair<pair<expr,unsigned>, name>> const & nested_aux, declaration const & d):
+    elim_nested_inductive_result(name_generator const & ngen, buffer<expr> const & params, buffer<pair<pair<expr,buffer<expr>>, name>> const & nested_aux, declaration const & d):
         m_ngen(ngen), m_params(params), m_aux_decl(d) {
-        for (pair<pair<expr,unsigned>, name> const & p : nested_aux) {
+        for (pair<pair<expr,buffer<expr>>, name> const & p : nested_aux) {
             m_aux2nested.insert(p.second, p.first);
         }
     }
 
     /* If `c` is a constructor name associated with an auxiliary inductive type, then return the
        nested inductive associated with it and the name of its inductive type. Return none. */
-    optional<pair<pair<expr,unsigned>, name>> get_nested_if_aux_constructor(environment const & aux_env, name const & c) const {
+    optional<pair<pair<expr,buffer<expr>>, name>> get_nested_if_aux_constructor(environment const & aux_env, name const & c) const {
         optional<constant_info> info = aux_env.find(c);
-        if (!info || !info->is_constructor()) return optional<pair<pair<expr,unsigned>, name>>();
+        if (!info || !info->is_constructor()) return optional<pair<pair<expr,buffer<expr>>, name>>();
         name auxI_name = info->to_constructor_val().get_induct();
-        pair<expr,unsigned> const * nested = m_aux2nested.find(auxI_name);
-        if (!nested) return optional<pair<pair<expr,unsigned>, name>>();
-        return optional<pair<pair<expr,unsigned>, name>>(*nested, auxI_name);
+        pair<expr,buffer<expr>> const * nested = m_aux2nested.find(auxI_name);
+        if (!nested) return optional<pair<pair<expr,buffer<expr>>, name>>();
+        return optional<pair<pair<expr,buffer<expr>>, name>>(*nested, auxI_name);
     }
 
     name restore_constructor_name(environment const & aux_env, name const & cnstr_name) const {
-        optional<pair<pair<expr,unsigned>, name>> p = get_nested_if_aux_constructor(aux_env, cnstr_name);
+        optional<pair<pair<expr,buffer<expr>>, name>> p = get_nested_if_aux_constructor(aux_env, cnstr_name);
         lean_assert(p);
         expr const & I = get_app_fn(p->first.first);
         lean_assert(is_constant(I));
@@ -840,58 +840,56 @@ struct elim_nested_inductive_result {
                 }
                 expr const & fn = get_app_fn(t);
                 if (is_constant(fn)) {
-                    if (pair<expr,unsigned> const * pack = m_aux2nested.find(const_name(fn))) {
+                    if (pair<expr,buffer<expr>> const * pack = m_aux2nested.find(const_name(fn))) {
                         expr nested               = pack->first;
-                        unsigned n_additional_indices = pack->second;                        
+                        unsigned n_additional_indices = pack->second.size();                        
                         buffer<expr> args;
-                        get_app_args(t, args);
-                        std::cout << fn << " [";
-                        for (unsigned i = 0; i < args.size(); i++) {
-                            std::cout << args[i] << ",";
-                        }
-                        std::cout << "] ->\n";                         
+                        get_app_args(t, args);                     
                         lean_assert(args.size() >= m_params.size());
+
                         buffer<expr> add_args;
                         for (unsigned i = 0; i < n_additional_indices; i++) {
                             add_args.push_back(args[m_params.size()+i]); 
-                        }                   
-                        std::cout << "add_args :  [";
-                        for (unsigned i = 0; i < add_args.size(); i++) {
-                            std::cout << add_args[i] << ",";
-                        }
-                        std::cout << "]\n";                                  
-                        expr  new_t = instantiate_rev(abstract(pack->first, m_params.size(), m_params.data()), As.size(), As.data());
-                              new_t = instantiate_rev(nested,add_args);
+                        }                                                  
+                        expr  new_nested = instantiate_rev(abstract(pack->first, m_params.size(), m_params.data()), As.size(), As.data());
+                              new_nested = instantiate_rev(nested,add_args);
+    
                         buffer<expr> real_args;
                         for (unsigned i = 0; i < args.size()-m_params.size() - n_additional_indices; i++) {
                             real_args.push_back(args[i+m_params.size()+n_additional_indices]); 
-                        }
-                        std::cout << new_t << " [";
-                        for (unsigned i = 0; i < real_args.size(); i++) {
-                            std::cout << real_args[i] << ",";
-                        }
-                        std::cout << "]\n";                           
-                        return some_expr(mk_app(new_t, real_args));
+                        }                          
+                        return some_expr(mk_app(new_nested, real_args));
                     }
-                    if (optional<pair<pair<expr,unsigned>, name>> r = get_nested_if_aux_constructor(aux_env, const_name(fn))) {
+                    if (optional<pair<pair<expr,buffer<expr>>, name>> r = get_nested_if_aux_constructor(aux_env, const_name(fn))) {
                         expr nested               = r->first.first;
-                        unsigned n_additional_indices = r->first.second;
+                        unsigned n_additional_indices = r->first.second.size();
                         name auxI_name            = r->second;
                         /* `t` is a constructor-application of an auxiliary inductive type */
                         buffer<expr> args;
                         get_app_args(t, args);                    
                         lean_assert(args.size() >= m_params.size());
+                        buffer<expr> add_args;
+                        for (unsigned i = 0; i < n_additional_indices; i++) {
+                            add_args.push_back(args[m_params.size()+i]); 
+                        }                                     
                         expr new_nested = instantiate_rev(abstract(nested, m_params.size(), m_params.data()), As.size(), As.data());
-                             new_nested = instantiate_rev(new_nested,n_additional_indices,args.data());
+                             new_nested = instantiate_rev(new_nested,add_args);
+
                         buffer<expr> I_args;
                         expr I = get_app_args(new_nested, I_args);   
                         lean_assert(is_constant(I));
                         name new_fn_name = const_name(fn).replace_prefix(auxI_name, const_name(I));
                         expr new_fn = mk_constant(new_fn_name, const_levels(I));
-                        for(unsigned i = 0; i < m_params.size() + n_additional_indices;i++) {
-                            args.pop_back();
+                        buffer<expr> real_args;
+                        for (unsigned i = 0; i < args.size()-m_params.size() - n_additional_indices; i++) {
+                            real_args.push_back(args[i+m_params.size()+n_additional_indices]); 
                         }
-                        expr new_t  = mk_app(mk_app(new_fn, I_args), args);
+                        std::cout << new_nested << " [";
+                        for (unsigned i = 0; i < real_args.size(); i++) {
+                            std::cout << real_args[i] << ",";
+                        }
+                        std::cout << "]\n"; 
+                        expr new_t  = mk_app(mk_app(new_fn, I_args), real_args);
                         return some_expr(new_t);
                     }
                 }
@@ -914,7 +912,7 @@ struct elim_nested_inductive_fn {
     name_generator             m_ngen;
     local_ctx                  m_params_lctx;
     buffer<expr>               m_params;
-    buffer<pair<pair<expr,unsigned>, name>>   m_nested_aux; /* The expressions stored here contains free vars in `m_params` */
+    buffer<pair<pair<expr,buffer<expr>>, name>>   m_nested_aux; /* The expressions stored here contains free vars in `m_params` */
     levels                     m_lvls;
     buffer<inductive_type>     m_new_types;
     unsigned                   m_next_idx{1};
@@ -1024,14 +1022,18 @@ struct elim_nested_inductive_fn {
         /* Replace `As` with `m_params` before searching at `m_nested_aux`.
            We need this step because we re-create parameters for each constructor with the correct binding info */
         expr Iparams = replace_params(IAs, As);
-        for (pair<pair<expr,unsigned>, name> const & p : m_nested_aux) { 
+        std::cout << "before lowering : " << Iparams << "\n";
+        if (optional<unsigned> min_loose_bvar = lowest_loose_bvar(Iparams)) {
+            Iparams      = lower_loose_bvars(Iparams, 0, *min_loose_bvar);
+            std::cout << "after lowering : " << Iparams << "\nmin_bvar:" << *min_loose_bvar << "\n"; 
+        }               
+        for (pair<pair<expr,buffer<expr>>, name> const & p : m_nested_aux) { 
             /* Remark: we could have used `is_def_eq` here instead of structural equality.
                It is probably not needed, but if one day we decide to do it, we have to populate
                an auxiliary environment with the inductive datatypes we are defining since `p.first` and `Iparams`
                contain references to them. */
-            std::cout << p.first.first << "=?=" << Iparams << "\n";
+            std::cout << p.first.first << " =?= " << Iparams << "\n";
             if (p.first.first == Iparams) { 
-                // TODO compare against whole added indice types, not just their number
                 auxI_name = p.second;
                 break;
             }
@@ -1055,7 +1057,12 @@ struct elim_nested_inductive_fn {
                 auxJ_type            = instantiate_pi_params(auxJ_type, I_nparams, args.data());
                 auxJ_type            = lctx.mk_pi(lvars, auxJ_type);
                 auxJ_type            = lctx.mk_pi(As, auxJ_type);
-                m_nested_aux.push_back(mk_pair(mk_pair(replace_params(JAs, As),lvars.size()), auxJ_name));
+                std::cout << "before lowering : " << auxJ_type << "\n";
+                if (optional<unsigned> min_loose_bvar = lowest_loose_bvar(auxJ_type)) {
+                    Iparams      = lower_loose_bvars(auxJ_type, 0, *min_loose_bvar);
+                    std::cout << "after lowering : " << auxJ_type << "\nmin_bvar:" << *min_loose_bvar << "\n"; 
+                }                               
+                m_nested_aux.push_back(mk_pair(mk_pair(replace_params(JAs, As),lvars), auxJ_name));
                 if (J_name == I_name) {
                     /* Create result */
                     expr auxI = mk_constant(auxJ_name, m_lvls);
@@ -1067,7 +1074,7 @@ struct elim_nested_inductive_fn {
                 for (name const & J_cnstr_name : J_info.to_inductive_val().get_cnstrs()) {
                     constant_info J_cnstr_info = m_env.get(J_cnstr_name);
                     name auxJ_cnstr_name = J_cnstr_name.replace_prefix(J_name, auxJ_name);
-                    /* auxJ_cnstr_type still has references to `J`, this will be fixed later when we process it. */
+                    /* auxJ_cnstr_type still has referen<ces to `J`, this will be fixed later when we process it. */
                     expr auxJ_cnstr_type    = instantiate_lparams(J_cnstr_info.get_type(), J_cnstr_info.get_lparams(), I_lvls);
                     auxJ_cnstr_type         = instantiate_pi_params(auxJ_cnstr_type, I_nparams, args.data());
                     auxJ_cnstr_type         = lctx.mk_pi(lvars, auxJ_cnstr_type);

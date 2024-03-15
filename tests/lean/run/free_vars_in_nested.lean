@@ -12,10 +12,10 @@ inductive Bar : Type
   (bar : {n : Nat} → (a : Foo n Bar 0) → motive_2 0 a → motive_1 (Bar.bar a)) (foo : {n : Nat} → motive_2 0 Foo.foo)
   (t : Bar) : motive_1 t-/
 
--- inductive Test : Nat → Type
---   | foo :{n : Nat} → List (Test n) → Test n.succ
+inductive Test : Nat → Type
+  | foo :{n : Nat} → List (Test n) → Test n.succ
 
--- #check Test.rec
+#check Test.rec
 
 -- inductive Regex : (α: Type u) -> Type (u + 1) where
 --   | or : Regex α → Regex α → Regex α

@@ -936,8 +936,8 @@ struct elim_nested_inductive_fn {
 
     expr replace_params(expr const & e, buffer<expr> const & As) {
         lean_assert(m_params.size() == As.size());
-        expr res =  instantiate_rev(abstract(e, As.size(), As.data()), m_params.size(), m_params.data());
-        std::cout << "before replacing params:" << e << "\nafter replacing params:" << res << "\n";
+        expr res =  replace_fvars(e, As.size(), As.data(), m_params.data());
+        std::cout << "before replacing params: " << e << "\nafter replacing params: " << res << "\n";
         return res;
     }
 
@@ -1022,10 +1022,11 @@ struct elim_nested_inductive_fn {
         /* Replace `As` with `m_params` before searching at `m_nested_aux`.
            We need this step because we re-create parameters for each constructor with the correct binding info */
         expr Iparams = replace_params(IAs, As);
+        //expr Iparams = IAs;
         std::cout << "before lowering : " << Iparams << "\n";
         if (optional<unsigned> min_loose_bvar = lowest_loose_bvar(Iparams)) {
             Iparams      = lower_loose_bvars(Iparams, 0, *min_loose_bvar);
-            std::cout << "after lowering : " << Iparams << "\nmin_bvar:" << *min_loose_bvar << "\n"; 
+            std::cout << "after lowering : " << Iparams << "\nmin_bvar: " << *min_loose_bvar << "\n"; 
         }               
         for (pair<pair<expr,buffer<expr>>, name> const & p : m_nested_aux) { 
             /* Remark: we could have used `is_def_eq` here instead of structural equality.
@@ -1060,9 +1061,9 @@ struct elim_nested_inductive_fn {
                 std::cout << "before lowering : " << auxJ_type << "\n";
                 if (optional<unsigned> min_loose_bvar = lowest_loose_bvar(auxJ_type)) {
                     Iparams      = lower_loose_bvars(auxJ_type, 0, *min_loose_bvar);
-                    std::cout << "after lowering : " << auxJ_type << "\nmin_bvar:" << *min_loose_bvar << "\n"; 
+                    std::cout << "after lowering : " << auxJ_type << "\nmin_bvar: " << *min_loose_bvar << "\n"; 
                 }                               
-                m_nested_aux.push_back(mk_pair(mk_pair(replace_params(JAs, As),lvars), auxJ_name));
+                m_nested_aux.push_back(mk_pair(mk_pair(JAs,lvars), auxJ_name));
                 if (J_name == I_name) {
                     /* Create result */
                     expr auxI = mk_constant(auxJ_name, m_lvls);
@@ -1076,10 +1077,13 @@ struct elim_nested_inductive_fn {
                     name auxJ_cnstr_name = J_cnstr_name.replace_prefix(J_name, auxJ_name);
                     /* auxJ_cnstr_type still has referen<ces to `J`, this will be fixed later when we process it. */
                     expr auxJ_cnstr_type    = instantiate_lparams(J_cnstr_info.get_type(), J_cnstr_info.get_lparams(), I_lvls);
+                    std::cout << "step 1 " << auxJ_cnstr_name << " : " << auxJ_cnstr_type << "\n";
                     auxJ_cnstr_type         = instantiate_pi_params(auxJ_cnstr_type, I_nparams, args.data());
+                    std::cout << "step 2 " << auxJ_cnstr_name << " : " << auxJ_cnstr_type << "\n";
                     auxJ_cnstr_type         = lctx.mk_pi(lvars, auxJ_cnstr_type);
+                    std::cout << "step 3 " << auxJ_cnstr_name << " : " << auxJ_cnstr_type << "\n";
                     auxJ_cnstr_type         = lctx.mk_pi(As, auxJ_cnstr_type);
-                    std::cout << auxJ_cnstr_name << " : " << auxJ_cnstr_type << "\n";
+                    std::cout << "step 4 " << auxJ_cnstr_name << " : " << auxJ_cnstr_type << "\n";
                     auxJ_constructors.push_back(constructor(auxJ_cnstr_name, auxJ_cnstr_type));
                 }
                 std::cout << auxJ_name << " : " << auxJ_type << "\n";

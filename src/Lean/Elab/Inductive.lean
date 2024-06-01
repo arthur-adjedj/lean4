@@ -84,7 +84,7 @@ structure ElabHeaderResult where
   deriving Inhabited
 
 private partial def elabHeaderAux (views : Array InductiveView) (i : Nat) (acc : Array ElabHeaderResult) : TermElabM (Array ElabHeaderResult) :=
-  Term.withAutoBoundImplicitForbiddenPred (fun n => views.any (·.shortDeclName == n)) do
+  Term.withAutoBoundImplicitForbiddenPred (fun n => views.any (·.shortDeclName == n)) <| withFreshMacroScope do
     if h : i < views.size then
       let view := views.get ⟨i, h⟩
       let acc ← Term.withAutoBoundImplicit <| Term.elabBinders view.binders.getArgs fun params => do

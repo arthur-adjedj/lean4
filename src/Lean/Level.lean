@@ -298,6 +298,7 @@ private def isAlreadyNormalizedCheap : Level → Bool
 private def mkIMaxAux : Level → Level → Level
   | _,    zero => zero
   | zero, u    => u
+  | succ zero, u    => u
   | u₁,   u₂   => if u₁ == u₂ then u₁ else mkLevelIMax u₁ u₂
 
 /- Auxiliary function used at `normalize` -/

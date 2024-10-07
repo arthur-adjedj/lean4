@@ -361,6 +361,7 @@ structure Context where
    This is not a great solution, but a proper solution would require a more sophisticased caching mechanism.
   -/
   inTypeClassResolution : Bool := false
+  safety : DefinitionSafety := .safe
 
 /--
 The `MetaM` monad is a core component of Lean's metaprogramming framework, facilitating the

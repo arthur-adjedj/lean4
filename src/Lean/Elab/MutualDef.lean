@@ -957,6 +957,8 @@ def elabMutualDef (vars : Array Expr) (sc : Command.Scope) (views : Array DefVie
     go
 where
   go :=
+    let safety := views[0]!.modifiers.toDefSafety
+    mapMetaM (withReader (fun ctx => {ctx with safety := safety})) do
     withAlwaysResolvedPromises views.size fun bodyPromises =>
     withAlwaysResolvedPromises views.size fun tacPromises => do
       let scopeLevelNames ← getLevelNames

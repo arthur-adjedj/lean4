@@ -81,6 +81,11 @@ def Modifiers.isNonrec : Modifiers → Bool
   | { recKind := .nonrec, .. } => true
   | _                          => false
 
+def Modifiers.toDefSafety (m : Modifiers) : DefinitionSafety :=
+  if m.isUnsafe then .unsafe
+  else if m.isPartial then .partial
+  else .safe
+
 /-- Adds attribute `attr` in `modifiers` -/
 def Modifiers.addAttr (modifiers : Modifiers) (attr : Attribute) : Modifiers :=
   { modifiers with attrs := modifiers.attrs.push attr }

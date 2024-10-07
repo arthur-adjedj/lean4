@@ -757,7 +757,7 @@ lbool type_checker::quick_is_def_eq(expr const & t, expr const & s, bool use_has
         case expr_kind::Lambda: case expr_kind::Pi:
             return to_lbool(is_def_eq_binding(t, s));
         case expr_kind::Sort:
-            return to_lbool(is_def_eq(sort_level(t), sort_level(s)));
+            return to_lbool(m_definition_safety == definition_safety::unsafe || is_def_eq(sort_level(t), sort_level(s)));
         case expr_kind::MData:
             return to_lbool(is_def_eq(mdata_expr(t), mdata_expr(s)));
         case expr_kind::MVar:

@@ -77,6 +77,7 @@ public:
     replace_rec_fn(F const & f, bool use_cache):m_f(f), m_use_cache(use_cache) {}
 
     expr operator()(expr const & e) { return apply(e, 0); }
+    expr operator()(expr const & e, unsigned n) { return apply(e, n); }
 };
 
 expr replace(expr const & e, std::function<optional<expr>(expr const &, unsigned)> const & f, bool use_cache) {

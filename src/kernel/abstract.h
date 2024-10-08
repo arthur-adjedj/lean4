@@ -13,5 +13,5 @@ namespace lean {
 expr abstract(expr const & e, unsigned n, expr const * s);
 inline expr abstract(expr const & e, expr const & s) { return abstract(e, 1, &s); }
 expr abstract(expr const & e, name const & n);
-
+expr replace_fvars(expr const & e, unsigned n,expr const * fvars, expr const * subst);
 }

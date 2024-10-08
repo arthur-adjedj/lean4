@@ -130,6 +130,8 @@ inline bool has_mvar(expr const & e) { return has_expr_mvar(e) || has_univ_mvar(
 bool has_fvar(expr const & e);
 bool has_univ_param(expr const & e);
 unsigned get_loose_bvar_range(expr const & e);
+optional<unsigned> lowest_loose_bvar(expr const & e);
+buffer<nat> loose_bvars(expr const & e);
 
 struct expr_hash { unsigned operator()(expr const & e) const { return hash(e); } };
 struct expr_pair_hash {
@@ -181,6 +183,14 @@ expr mk_app(unsigned num_args, expr const * args);
 inline expr mk_app(std::initializer_list<expr> const & l) { return mk_app(l.size(), l.begin()); }
 inline expr mk_app(buffer<expr> const & args) { return mk_app(args.size(), args.data()); }
 inline expr mk_app(expr const & f, buffer<expr> const & args) { return mk_app(f, args.size(), args.data()); }
+inline expr mk_app(expr const & f, buffer<nat> const & bvars) { 
+    buffer<expr> args;
+    for (unsigned i = 0; i < bvars.size(); i++) {
+        expr e = mk_bvar(bvars[i]);
+        args.push_back(e);
+    }
+    return mk_app(f, args); 
+}
 expr mk_app(expr const & f, list<expr> const & args);
 inline expr mk_app(expr const & e1, expr const & e2, expr const & e3) { return mk_app({e1, e2, e3}); }
 inline expr mk_app(expr const & e1, expr const & e2, expr const & e3, expr const & e4) { return mk_app({e1, e2, e3, e4}); }
@@ -189,6 +199,14 @@ expr mk_rev_app(expr const & f, unsigned num_args, expr const * args);
 expr mk_rev_app(unsigned num_args, expr const * args);
 inline expr mk_rev_app(buffer<expr> const & args) { return mk_rev_app(args.size(), args.data()); }
 inline expr mk_rev_app(expr const & f, buffer<expr> const & args) { return mk_rev_app(f, args.size(), args.data()); }
+inline expr mk_rev_app(expr const & f, buffer<nat> const & bvars) { 
+    buffer<expr> args;
+    for (unsigned i = 0; i < bvars.size(); i++) {
+        expr e = mk_bvar(bvars[i]);
+        args.push_back(e);
+    }
+    return mk_rev_app(f, args); 
+}
 expr mk_lambda(name const & n, expr const & t, expr const & e, binder_info bi = mk_binder_info());
 expr mk_pi(name const & n, expr const & t, expr const & e, binder_info bi = mk_binder_info());
 inline expr mk_binding(expr_kind k, name const & n, expr const & t, expr const & e, binder_info bi = mk_binder_info()) {

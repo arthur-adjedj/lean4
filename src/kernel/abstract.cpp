@@ -65,6 +65,27 @@ static object * lean_expr_abstract_core(object * e0, size_t n, object * subst) {
     return r.steal();
 }
 
+expr replace_fvars(expr const & e, unsigned n,expr const * fvars, expr const * subst) {
+    lean_assert(std::all_of(fvars, fvars+n, [](expr const & e) { return !has_loose_bvars(e) && is_fvar(e); }));
+    if (!has_fvar(e))
+        return e;
+    return replace(e, [=](expr const & m, unsigned offset) -> optional<expr> {
+            if (!has_fvar(m))
+                return some_expr(m); // expression m does not contain free variables
+            if (is_fvar(m)) {
+                unsigned i = n;
+                while (i > 0) {
+                    --i;
+                    if (fvar_name(fvars[i]) == fvar_name(m))
+                        return some_expr(subst[i]);
+                }
+                return none_expr();
+            }
+            return none_expr();
+        });
+}
+
+
 extern "C" LEAN_EXPORT object * lean_expr_abstract_range(object * e, object * n, object * subst) {
     if (!lean_is_scalar(n))
         return lean_expr_abstract_core(e, lean_array_size(subst), subst);
@@ -76,3 +97,4 @@ extern "C" LEAN_EXPORT object * lean_expr_abstract(object * e, object * subst) {
     return lean_expr_abstract_core(e, lean_array_size(subst), subst);
 }
 }
+

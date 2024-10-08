@@ -1,0 +1,416 @@
+cnstr_type before : Regex.or : (Regex.{u} _nested_fresh.1) -> (Regex.{u} _nested_fresh.1) -> (Regex.{u} _nested_fresh.1)
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : [_nested_fresh.2,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : [_nested_fresh.2,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : [_nested_fresh.2,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : [_nested_fresh.2,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : [_nested_fresh.2,_nested_fresh.3,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : [_nested_fresh.2,_nested_fresh.3,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : [_nested_fresh.2,_nested_fresh.3,]
+cnstr_type middle : Regex.or : (Regex.{u} _nested_fresh.1) -> (Regex.{u} _nested_fresh.1) -> (Regex.{u} _nested_fresh.1)
+cnstr_type after : Regex.or : forall {α : Type.{u}}, (Regex.{u} α) -> (Regex.{u} α) -> (Regex.{u} α)
+cnstr_type before : Regex.eps : Regex.{u} _nested_fresh.2
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : []
+cnstr_type middle : Regex.eps : Regex.{u} _nested_fresh.2
+cnstr_type after : Regex.eps : forall {α : Type.{u}}, Regex.{u} α
+
+AAAAAAAAAAAAAAAAAAAAAA 
+
+Checking Regex : Type.{u} -> Type.{succ u}
+
+Checking constructors
+
+Checking constructor Regex.or : forall {α : Type.{u}}, (Regex.{u} α) -> (Regex.{u} α) -> (Regex.{u} α)
+
+Checking constructor Regex.eps : forall {α : Type.{u}}, Regex.{u} α
+
+
+BBBBBBBBBBBB 
+
+cnstr_type before : Lang.lang_eps : Lang.{u} _nested_fresh.1 (Regex.eps.{u} _nested_fresh.1) (List.nil.{u} _nested_fresh.1)
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.1,]
+fvars : []
+cnstr_type middle : Lang.lang_eps : Lang.{u} _nested_fresh.1 (Regex.eps.{u} _nested_fresh.1) (List.nil.{u} _nested_fresh.1)
+cnstr_type after : Lang.lang_eps : forall {α : Type.{u}}, Lang.{u} α (Regex.eps.{u} α) (List.nil.{u} α)
+cnstr_type before : Lang.lang_or : forall (str : List.{u} _nested_fresh.2) (r1 : Regex.{u} _nested_fresh.2) (r2 : Regex.{u} _nested_fresh.2), (Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.2 r1 str) (Lang.{u} _nested_fresh.2 r2 str)) -> (Lang.{u} _nested_fresh.2 (Regex.or.{u} _nested_fresh.2 r1 r2) str)
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,_nested_fresh.4,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,_nested_fresh.4,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,_nested_fresh.4,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,_nested_fresh.4,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,_nested_fresh.4,_nested_fresh.5,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,_nested_fresh.4,_nested_fresh.5,]
+Is : [1,2,0,]
+Sorted Is : [0,1,2,]
+local vars : [_nested_fresh.3,_nested_fresh.4,_nested_fresh.5,]
+before replacing params : Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.2 #1 #2) (Lang.{u} _nested_fresh.2 #0 #2)
+before replacing params: Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.2 #1 #2) (Lang.{u} _nested_fresh.2 #0 #2)
+after replacing params: Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 #1 #2) (Lang.{u} _nested_fresh.0 #0 #2)
+after replacing params : Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 #1 #2) (Lang.{u} _nested_fresh.0 #0 #2)
+before lowering : Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 #1 #2) (Lang.{u} _nested_fresh.0 #0 #2)
+after lowering : Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 #1 #2) (Lang.{u} _nested_fresh.0 #0 #2)
+min_bvar: 0
+before replacing params: Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.2 #1 #2) (Lang.{u} _nested_fresh.2 #0 #2)
+after replacing params: Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 #1 #2) (Lang.{u} _nested_fresh.0 #0 #2)
+step1 : Type.{succ (succ u)} -> Type.{succ (succ u)} -> Type.{succ (succ u)}
+step2 : Type.{succ (succ u)}
+step3 : (List.{u} _nested_fresh.2) -> (Regex.{u} _nested_fresh.2) -> (Regex.{u} _nested_fresh.2) -> Type.{succ (succ u)}
+before lowering/step4 : forall {α : Type.{u}}, (List.{u} α) -> (Regex.{u} α) -> (Regex.{u} α) -> Type.{succ (succ u)}
+RESULT 1: _nested.Sum_1.{u}
+RESULT 2: _nested.Sum_1.{u} _nested_fresh.2
+RESULT 3: _nested.Sum_1.{u} _nested_fresh.2 #2 #1 #0
+RESULT 4: _nested.Sum_1.{u} _nested_fresh.2 #2 #1 #0
+step 1 _nested.Sum_1.inl : forall {α : Type.{succ (succ u)}} {β : Type.{succ (succ u)}}, α -> (Sum.{succ (succ u), succ (succ u)} α β)
+step 2 _nested.Sum_1.inl : (Lang.{u} _nested_fresh.2 #1 #2) -> (Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.2 #1 #2) (Lang.{u} _nested_fresh.2 #0 #2))
+step 3 _nested.Sum_1.inl : forall (str : List.{u} _nested_fresh.2) (r1 : Regex.{u} _nested_fresh.2) (r2 : Regex.{u} _nested_fresh.2), (Lang.{u} _nested_fresh.2 r1 str) -> (Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.2 r1 str) (Lang.{u} _nested_fresh.2 r2 str))
+step 4 _nested.Sum_1.inl : forall {α : Type.{u}} (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α), (Lang.{u} α r1 str) -> (Sum.{succ (succ u), succ (succ u)} (Lang.{u} α r1 str) (Lang.{u} α r2 str))
+step 1 _nested.Sum_1.inr : forall {α : Type.{succ (succ u)}} {β : Type.{succ (succ u)}}, β -> (Sum.{succ (succ u), succ (succ u)} α β)
+step 2 _nested.Sum_1.inr : (Lang.{u} _nested_fresh.2 #0 #2) -> (Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.2 #1 #2) (Lang.{u} _nested_fresh.2 #0 #2))
+step 3 _nested.Sum_1.inr : forall (str : List.{u} _nested_fresh.2) (r1 : Regex.{u} _nested_fresh.2) (r2 : Regex.{u} _nested_fresh.2), (Lang.{u} _nested_fresh.2 r2 str) -> (Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.2 r1 str) (Lang.{u} _nested_fresh.2 r2 str))
+step 4 _nested.Sum_1.inr : forall {α : Type.{u}} (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α), (Lang.{u} α r2 str) -> (Sum.{succ (succ u), succ (succ u)} (Lang.{u} α r1 str) (Lang.{u} α r2 str))
+_nested.Sum_1 : forall {α : Type.{u}}, (List.{u} α) -> (Regex.{u} α) -> (Regex.{u} α) -> Type.{succ (succ u)}
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.2,]
+fvars : [_nested_fresh.3,_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+cnstr_type middle : Lang.lang_or : forall (str : List.{u} _nested_fresh.2) (r1 : Regex.{u} _nested_fresh.2) (r2 : Regex.{u} _nested_fresh.2), (_nested.Sum_1.{u} _nested_fresh.2 str r1 r2) -> (Lang.{u} _nested_fresh.2 (Regex.or.{u} _nested_fresh.2 r1 r2) str)
+cnstr_type after : Lang.lang_or : forall {α : Type.{u}} (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α), (_nested.Sum_1.{u} α str r1 r2) -> (Lang.{u} α (Regex.or.{u} α r1 r2) str)
+cnstr_type before : _nested.Sum_1.inl : forall (str : List.{u} _nested_fresh.3) (r1 : Regex.{u} _nested_fresh.3) (r2 : Regex.{u} _nested_fresh.3), (Lang.{u} _nested_fresh.3 r1 str) -> (Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.3 r1 str) (Lang.{u} _nested_fresh.3 r2 str))
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : [_nested_fresh.4,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : [_nested_fresh.4,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : [_nested_fresh.4,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : [_nested_fresh.4,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : [_nested_fresh.4,_nested_fresh.5,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : [_nested_fresh.4,_nested_fresh.5,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : [_nested_fresh.4,_nested_fresh.5,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : [_nested_fresh.4,_nested_fresh.5,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : [_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : [_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : [_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : [_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : [_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : [_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : [_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : [_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.3,]
+fvars : [_nested_fresh.4,_nested_fresh.5,_nested_fresh.6,_nested_fresh.7,]
+Is : [2,3,1,]
+Sorted Is : [1,2,3,]
+local vars : [_nested_fresh.5,_nested_fresh.6,_nested_fresh.7,]
+before replacing params : Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.3 #2 #3) (Lang.{u} _nested_fresh.3 #1 #3)
+before replacing params: Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.3 #2 #3) (Lang.{u} _nested_fresh.3 #1 #3)
+after replacing params: Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 #2 #3) (Lang.{u} _nested_fresh.0 #1 #3)
+after replacing params : Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 #2 #3) (Lang.{u} _nested_fresh.0 #1 #3)
+before lowering : Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 #2 #3) (Lang.{u} _nested_fresh.0 #1 #3)
+after lowering : Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 #1 #2) (Lang.{u} _nested_fresh.0 #0 #2)
+min_bvar: 1
+Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 #1 #2) (Lang.{u} _nested_fresh.0 #0 #2) =?= Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 #1 #2) (Lang.{u} _nested_fresh.0 #0 #2)
+auxI : _nested.Sum_1.{u} _nested_fresh.3 #3 #2 #1
+cnstr_type middle : _nested.Sum_1.inl : forall (str : List.{u} _nested_fresh.3) (r1 : Regex.{u} _nested_fresh.3) (r2 : Regex.{u} _nested_fresh.3), (Lang.{u} _nested_fresh.3 r1 str) -> (_nested.Sum_1.{u} _nested_fresh.3 str r1 r2)
+cnstr_type after : _nested.Sum_1.inl : forall {α : Type.{u}} (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α), (Lang.{u} α r1 str) -> (_nested.Sum_1.{u} α str r1 r2)
+cnstr_type before : _nested.Sum_1.inr : forall (str : List.{u} _nested_fresh.4) (r1 : Regex.{u} _nested_fresh.4) (r2 : Regex.{u} _nested_fresh.4), (Lang.{u} _nested_fresh.4 r2 str) -> (Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.4 r1 str) (Lang.{u} _nested_fresh.4 r2 str))
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : []
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : [_nested_fresh.5,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : [_nested_fresh.5,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : [_nested_fresh.5,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : [_nested_fresh.5,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : [_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : [_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : [_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : [_nested_fresh.5,_nested_fresh.6,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : [_nested_fresh.5,_nested_fresh.6,_nested_fresh.7,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : [_nested_fresh.5,_nested_fresh.6,_nested_fresh.7,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : [_nested_fresh.5,_nested_fresh.6,_nested_fresh.7,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : [_nested_fresh.5,_nested_fresh.6,_nested_fresh.7,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : [_nested_fresh.5,_nested_fresh.6,_nested_fresh.7,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : [_nested_fresh.5,_nested_fresh.6,_nested_fresh.7,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : [_nested_fresh.5,_nested_fresh.6,_nested_fresh.7,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : [_nested_fresh.5,_nested_fresh.6,_nested_fresh.7,]
+m_params : [_nested_fresh.0,]
+As : [_nested_fresh.4,]
+fvars : [_nested_fresh.5,_nested_fresh.6,_nested_fresh.7,_nested_fresh.8,]
+Is : [2,3,1,]
+Sorted Is : [1,2,3,]
+local vars : [_nested_fresh.6,_nested_fresh.7,_nested_fresh.8,]
+before replacing params : Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.4 #2 #3) (Lang.{u} _nested_fresh.4 #1 #3)
+before replacing params: Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.4 #2 #3) (Lang.{u} _nested_fresh.4 #1 #3)
+after replacing params: Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 #2 #3) (Lang.{u} _nested_fresh.0 #1 #3)
+after replacing params : Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 #2 #3) (Lang.{u} _nested_fresh.0 #1 #3)
+before lowering : Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 #2 #3) (Lang.{u} _nested_fresh.0 #1 #3)
+after lowering : Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 #1 #2) (Lang.{u} _nested_fresh.0 #0 #2)
+min_bvar: 1
+Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 #1 #2) (Lang.{u} _nested_fresh.0 #0 #2) =?= Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 #1 #2) (Lang.{u} _nested_fresh.0 #0 #2)
+auxI : _nested.Sum_1.{u} _nested_fresh.4 #3 #2 #1
+cnstr_type middle : _nested.Sum_1.inr : forall (str : List.{u} _nested_fresh.4) (r1 : Regex.{u} _nested_fresh.4) (r2 : Regex.{u} _nested_fresh.4), (Lang.{u} _nested_fresh.4 r2 str) -> (_nested.Sum_1.{u} _nested_fresh.4 str r1 r2)
+cnstr_type after : _nested.Sum_1.inr : forall {α : Type.{u}} (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α), (Lang.{u} α r2 str) -> (_nested.Sum_1.{u} α str r1 r2)
+
+AAAAAAAAAAAAAAAAAAAAAA 
+
+Checking Lang : forall {α : Type.{u}}, (Regex.{u} α) -> (List.{u} α) -> Type.{succ (succ u)}
+
+Checking _nested.Sum_1 : forall {α : Type.{u}}, (List.{u} α) -> (Regex.{u} α) -> (Regex.{u} α) -> Type.{succ (succ u)}
+
+Checking constructors
+
+Checking constructor Lang.lang_eps : forall {α : Type.{u}}, Lang.{u} α (Regex.eps.{u} α) (List.nil.{u} α)
+
+Checking constructor Lang.lang_or : forall {α : Type.{u}} (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α), (_nested.Sum_1.{u} α str r1 r2) -> (Lang.{u} α (Regex.or.{u} α r1 r2) str)
+
+Checking constructor _nested.Sum_1.inl : forall {α : Type.{u}} (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α), (Lang.{u} α r1 str) -> (_nested.Sum_1.{u} α str r1 r2)
+
+Checking constructor _nested.Sum_1.inr : forall {α : Type.{u}} (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α), (Lang.{u} α r2 str) -> (_nested.Sum_1.{u} α str r1 r2)
+
+
+BBBBBBBBBBBB 
+
+
+OLD_REC Lang.rec :
+forall {α : Type.{u}} {motive_1 : forall (a._@.free_vars_in_nested._hyg.38 : Regex.{u} α) (a._@.free_vars_in_nested._hyg.41 : List.{u} α), (Lang.{u} α a._@.free_vars_in_nested._hyg.38 a._@.free_vars_in_nested._hyg.41) -> Sort.{u_1}} {motive_2 : forall (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α), (_nested.Sum_1.{u} α str r1 r2) -> Sort.{u_1}}, (motive_1 (Regex.eps.{u} α) (List.nil.{u} α) (Lang.lang_eps.{u} α)) -> (forall (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α) (a._@.free_vars_in_nested._hyg.56 : _nested.Sum_1.{u} α str r1 r2), (motive_2 str r1 r2 a._@.free_vars_in_nested._hyg.56) -> (motive_1 (Regex.or.{u} α r1 r2) str (Lang.lang_or.{u} α str r1 r2 a._@.free_vars_in_nested._hyg.56))) -> (forall (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α) (val : Lang.{u} α r1 str), (motive_1 r1 str val) -> (motive_2 str r1 r2 (_nested.Sum_1.inl.{u} α str r1 r2 val))) -> (forall (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α) (val : Lang.{u} α r2 str), (motive_1 r2 str val) -> (motive_2 str r1 r2 (_nested.Sum_1.inr.{u} α str r1 r2 val))) -> (forall {a._@.free_vars_in_nested._hyg.38 : Regex.{u} α} {a._@.free_vars_in_nested._hyg.41 : List.{u} α} (t : Lang.{u} α a._@.free_vars_in_nested._hyg.38 a._@.free_vars_in_nested._hyg.41), motive_1 a._@.free_vars_in_nested._hyg.38 a._@.free_vars_in_nested._hyg.41 t)
+
+Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.7 #2 #3) (Lang.{u} _nested_fresh.7 _nested_fresh.7 #3) [#1,]
+Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.7 #2 #3) (Lang.{u} _nested_fresh.7 _nested_fresh.7 #3) [#1,]
+
+REC Lang.rec :
+forall {α : Type.{u}} {motive_1 : forall (a._@.free_vars_in_nested._hyg.38 : Regex.{u} α) (a._@.free_vars_in_nested._hyg.41 : List.{u} α), (Lang.{u} α a._@.free_vars_in_nested._hyg.38 a._@.free_vars_in_nested._hyg.41) -> Sort.{u_1}} {motive_2 : forall (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α), (Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 r1 str) (Lang.{u} _nested_fresh.0 r2 str)) -> Sort.{u_1}}, (motive_1 (Regex.eps.{u} α) (List.nil.{u} α) (Lang.lang_eps.{u} α)) -> (forall (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α) (a._@.free_vars_in_nested._hyg.56 : Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 r1 str) (Lang.{u} _nested_fresh.0 r2 str)), (motive_2 str r1 r2 a._@.free_vars_in_nested._hyg.56) -> (motive_1 (Regex.or.{u} α r1 r2) str (Lang.lang_or.{u} α str r1 r2 a._@.free_vars_in_nested._hyg.56))) -> (forall (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α) (val : Lang.{u} α r1 str), (motive_1 r1 str val) -> (motive_2 str r1 r2 (Sum.inl.{succ (succ u), succ (succ u)} (Lang.{u} α r2 r1) (Lang.{u} α α r1) val))) -> (forall (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α) (val : Lang.{u} α r2 str), (motive_1 r2 str val) -> (motive_2 str r1 r2 (Sum.inr.{succ (succ u), succ (succ u)} (Lang.{u} α r2 r1) (Lang.{u} α α r1) val))) -> (forall {a._@.free_vars_in_nested._hyg.38 : Regex.{u} α} {a._@.free_vars_in_nested._hyg.41 : List.{u} α} (t : Lang.{u} α a._@.free_vars_in_nested._hyg.38 a._@.free_vars_in_nested._hyg.41), motive_1 a._@.free_vars_in_nested._hyg.38 a._@.free_vars_in_nested._hyg.41 t)
+
+Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.8 #2 #3) (Lang.{u} _nested_fresh.8 _nested_fresh.8 #3) [#1,]
+Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.8 #2 #3) (Lang.{u} _nested_fresh.8 _nested_fresh.8 #3) [#1,]
+Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.9 #2 #3) (Lang.{u} _nested_fresh.9 _nested_fresh.9 #3) [#1,]
+Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.9 #2 #3) (Lang.{u} _nested_fresh.9 _nested_fresh.9 #3) [#1,]
+
+OLD_REC _nested.Sum_1.rec :
+forall {α : Type.{u}} {motive_1 : forall (a._@.free_vars_in_nested._hyg.38 : Regex.{u} α) (a._@.free_vars_in_nested._hyg.41 : List.{u} α), (Lang.{u} α a._@.free_vars_in_nested._hyg.38 a._@.free_vars_in_nested._hyg.41) -> Sort.{u_1}} {motive_2 : forall (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α), (_nested.Sum_1.{u} α str r1 r2) -> Sort.{u_1}}, (motive_1 (Regex.eps.{u} α) (List.nil.{u} α) (Lang.lang_eps.{u} α)) -> (forall (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α) (a._@.free_vars_in_nested._hyg.56 : _nested.Sum_1.{u} α str r1 r2), (motive_2 str r1 r2 a._@.free_vars_in_nested._hyg.56) -> (motive_1 (Regex.or.{u} α r1 r2) str (Lang.lang_or.{u} α str r1 r2 a._@.free_vars_in_nested._hyg.56))) -> (forall (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α) (val : Lang.{u} α r1 str), (motive_1 r1 str val) -> (motive_2 str r1 r2 (_nested.Sum_1.inl.{u} α str r1 r2 val))) -> (forall (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α) (val : Lang.{u} α r2 str), (motive_1 r2 str val) -> (motive_2 str r1 r2 (_nested.Sum_1.inr.{u} α str r1 r2 val))) -> (forall {str : List.{u} α} {r1 : Regex.{u} α} {r2 : Regex.{u} α} (t : _nested.Sum_1.{u} α str r1 r2), motive_2 str r1 r2 t)
+
+Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.10 #2 #3) (Lang.{u} _nested_fresh.10 _nested_fresh.10 #3) [#1,]
+Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.10 #2 #3) (Lang.{u} _nested_fresh.10 _nested_fresh.10 #3) [#1,]
+
+REC _nested.Sum_1.rec :
+forall {α : Type.{u}} {motive_1 : forall (a._@.free_vars_in_nested._hyg.38 : Regex.{u} α) (a._@.free_vars_in_nested._hyg.41 : List.{u} α), (Lang.{u} α a._@.free_vars_in_nested._hyg.38 a._@.free_vars_in_nested._hyg.41) -> Sort.{u_1}} {motive_2 : forall (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α), (Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 r1 str) (Lang.{u} _nested_fresh.0 r2 str)) -> Sort.{u_1}}, (motive_1 (Regex.eps.{u} α) (List.nil.{u} α) (Lang.lang_eps.{u} α)) -> (forall (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α) (a._@.free_vars_in_nested._hyg.56 : Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 r1 str) (Lang.{u} _nested_fresh.0 r2 str)), (motive_2 str r1 r2 a._@.free_vars_in_nested._hyg.56) -> (motive_1 (Regex.or.{u} α r1 r2) str (Lang.lang_or.{u} α str r1 r2 a._@.free_vars_in_nested._hyg.56))) -> (forall (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α) (val : Lang.{u} α r1 str), (motive_1 r1 str val) -> (motive_2 str r1 r2 (Sum.inl.{succ (succ u), succ (succ u)} (Lang.{u} α r2 r1) (Lang.{u} α α r1) val))) -> (forall (str : List.{u} α) (r1 : Regex.{u} α) (r2 : Regex.{u} α) (val : Lang.{u} α r2 str), (motive_1 r2 str val) -> (motive_2 str r1 r2 (Sum.inr.{succ (succ u), succ (succ u)} (Lang.{u} α r2 r1) (Lang.{u} α α r1) val))) -> (forall {str : List.{u} α} {r1 : Regex.{u} α} {r2 : Regex.{u} α} (t : Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.0 r1 str) (Lang.{u} _nested_fresh.0 r2 str)), motive_2 str r1 r2 t)
+
+Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.11 #2 #3) (Lang.{u} _nested_fresh.11 _nested_fresh.11 #3) [#1,]
+Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.11 #2 #3) (Lang.{u} _nested_fresh.11 _nested_fresh.11 #3) [#1,]
+Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.12 #2 #3) (Lang.{u} _nested_fresh.12 _nested_fresh.12 #3) [#1,]
+Sum.{succ (succ u), succ (succ u)} (Lang.{u} _nested_fresh.12 #2 #3) (Lang.{u} _nested_fresh.12 _nested_fresh.12 #3) [#1,]
+./free_vars_in_nested.lean:31:0: error: (kernel) declaration has free variables 'Lang.recOn'

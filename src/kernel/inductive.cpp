@@ -147,11 +147,13 @@ class add_inductive_fn {
 
     unsigned               m_nnested;
 
+    name_map<expr> m_minor_names; /* mappings from constructors to minor motives*/
+
     struct rec_info {
-        expr         m_C;        /* free variable for "main" motive */
-        buffer<expr> m_minors;   /* minor premises */
-        buffer<expr> m_indices;
-        expr         m_major;    /* major premise */
+        expr           m_C;        /* free variable for "main" motive */
+        buffer<expr>   m_minors;   /* minor premises */
+        buffer<expr>   m_indices;
+        expr           m_major;    /* major premise */
     };
 
     /* We have an entry for each inductive datatype being declared,
@@ -213,7 +215,7 @@ public:
         bool first = true;
         for (inductive_type const & ind_type : m_ind_types) {
             expr type = ind_type.get_type();
-            m_env.check_name(ind_type.get_name());
+            // m_env.check_name(ind_type.get_name());
             m_env.check_name(mk_rec_name(ind_type.get_name()));
             check_no_metavar_no_fvar(m_env, ind_type.get_name(), type);
             tc().check(type, m_lparams);
@@ -420,7 +422,7 @@ public:
                 }
                 found_cnstrs.insert(n);
                 expr t = constructor_type(cnstr);
-                m_env.check_name(n);
+                // m_env.check_name(n);
                 check_no_metavar_no_fvar(m_env, n, t);
                 tc().check(t, m_lparams);
                 unsigned i = 0;
@@ -583,6 +585,43 @@ public:
         return *r;
     }
 
+    void mk_motive_arg(unsigned d_idx, inductive_type const & ind_type, const expr u_i, const expr u_i_ty, buffer<expr> const & xs, buffer<expr> const & u, buffer<expr> & v) {
+            buffer<expr> it_indices;
+            unsigned it_idx = get_I_indices(u_i_ty, it_indices);
+            expr C_app  = m_rec_infos[it_idx].m_C;
+            for (unsigned i = 0; i < it_indices.size(); i++) {
+                expr index = it_indices[i];
+                C_app = mk_app(C_app, index);
+                expr index_ty = whnf(infer_type(index));
+                if (is_rec_argument(index_ty)) {
+                    if (is_fvar(index)) {
+                        for (unsigned j = 0; i < j; j++) {
+                            if (index == u[j]) {
+                                expr v_j = v[j];
+                                C_app = mk_app(C_app, v_j);
+                                break;
+                            }
+                        }
+                    } else {
+                        buffer<expr> args;
+                        expr f = get_app_args(index, args);
+                        name f_name = const_name(f);
+                        // std::cout << "Checking " << f_name << "\n\n";
+                        // throw kernel_exception(m_env,std::to_string((m_rec_infos[d_idx].m_minor_names.size())).c_str() );
+                        expr rec_arg  = *m_minor_names.find(f_name);
+                        rec_arg = mk_app(rec_arg, args);
+                        C_app   = mk_app(C_app, rec_arg);
+                    } 
+                }
+            }
+            expr u_app  = mk_app(u_i, xs);
+            C_app = mk_app(C_app, u_app);
+            expr v_i_ty = mk_pi(xs, C_app);
+            local_decl u_i_decl = m_lctx.get_local_decl(fvar_name(u_i));
+            expr v_i    = mk_local_decl(u_i_decl.get_user_name().append_after("_ih"), v_i_ty, binder_info());
+            v.push_back(v_i);
+    }
+
     /** \brief Populate m_rec_infos. */
     void mk_rec_infos() {
         unsigned d_idx = 0;
@@ -606,7 +645,28 @@ public:
             info.m_major = mk_local_decl("t", mk_app(mk_app(m_ind_cnsts[d_idx], m_params), info.m_indices));
             expr C_ty = mk_sort(m_elim_level);
             C_ty      = mk_pi(info.m_major, C_ty);
-            C_ty      = mk_pi(info.m_indices, C_ty);
+            for (unsigned i = 0; i < info.m_indices.size(); i++) {
+                expr index = info.m_indices[info.m_indices.size()-i-1];
+                expr index_ty = whnf(infer_type(index));
+                if (is_rec_argument(index_ty)) {
+                    buffer<expr> xs;
+                    while (is_pi(index_ty)) {
+                        expr x = mk_local_decl_for(index_ty);
+                        xs.push_back(x);
+                        index_ty = whnf(instantiate(binding_body(index_ty), x));
+                    }
+                    buffer<expr> it_indices;
+                    unsigned it_idx = get_I_indices(index_ty, it_indices);
+                    expr C_app  = mk_app(m_rec_infos[it_idx].m_C, it_indices);
+                    expr u_app  = mk_app(index, xs);
+                    C_app = mk_app(C_app, u_app);
+                    expr v_i_ty = mk_pi(xs, C_app);
+                    local_decl u_i_decl = m_lctx.get_local_decl(fvar_name(index));
+                    expr v_i    = mk_local_decl(u_i_decl.get_user_name().append_after("_ih"), v_i_ty, binder_info());
+                    C_ty = mk_pi(v_i,  C_ty);
+                };
+                C_ty = mk_pi(index,  C_ty);
+            }
             name C_name("motive");
             if (m_ind_types.size() > 1)
                 C_name = name(C_name).append_after(d_idx+1);
@@ -621,7 +681,7 @@ public:
             for (constructor const & cnstr : ind_type.get_cnstrs()) {
                 buffer<expr> b_u; // nonrec and rec args;
                 buffer<expr> u;   // rec args
-                buffer<expr> v;   // inductive args
+                buffer<expr> v;   // motive args
                 name cnstr_name = constructor_name(cnstr);
                 expr t          = constructor_type(cnstr);
                 unsigned i      = 0;
@@ -652,20 +712,14 @@ public:
                         xs.push_back(x);
                         u_i_ty = whnf(instantiate(binding_body(u_i_ty), x));
                     }
-                    buffer<expr> it_indices;
-                    unsigned it_idx = get_I_indices(u_i_ty, it_indices);
-                    expr C_app  = mk_app(m_rec_infos[it_idx].m_C, it_indices);
-                    expr u_app  = mk_app(u_i, xs);
-                    C_app = mk_app(C_app, u_app);
-                    expr v_i_ty = mk_pi(xs, C_app);
-                    local_decl u_i_decl = m_lctx.get_local_decl(fvar_name(u_i));
-                    expr v_i    = mk_local_decl(u_i_decl.get_user_name().append_after("_ih"), v_i_ty, binder_info());
-                    v.push_back(v_i);
+                    mk_motive_arg(d_idx, ind_type, u_i, u_i_ty, xs, u, v);
                 }
                 expr minor_ty   = mk_pi(b_u, mk_pi(v, C_app));
                 name minor_name = cnstr_name.replace_prefix(ind_type_name, name());
                 expr minor      = mk_local_decl(minor_name, minor_ty);
                 m_rec_infos[d_idx].m_minors.push_back(minor);
+                // std::cout << "Mapping " << d_idx << " "<< cnstr_name << " to " << minor << "\n\n";
+                m_minor_names.insert(cnstr_name, minor);
             }
             d_idx++;
         }
@@ -774,10 +828,12 @@ public:
 
     environment operator()() {
         m_env.check_duplicated_univ_params(m_lparams);
-        check_inductive_types();
+        // TODO do check_name in  `declare_inductive_types` and `declare_constructors` instead of 
+        // in `check_inductive_types` and `check_constructors`
         declare_inductive_types();
-        check_constructors();
+        check_inductive_types();
         declare_constructors();
+        check_constructors();
         init_elim_level();
         init_K_target();
         mk_rec_infos();

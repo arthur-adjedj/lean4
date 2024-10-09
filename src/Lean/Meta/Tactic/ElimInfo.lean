@@ -56,8 +56,8 @@ def getElimExprInfo (elimExpr : Expr) (baseDeclName? : Option Name := none) : Me
       throwError "unexpected eliminator resulting type{indentExpr type}"
     let motiveType ← inferType motive
     forallTelescopeReducing motiveType fun motiveArgs motiveResultType => do
-      unless motiveArgs.size == targets.size do
-        throwError "unexpected number of arguments at motive type{indentExpr motiveType}"
+      -- unless motiveArgs.size == targets.size do
+      --   throwError "unexpected number of arguments at motive type{indentExpr motiveType}"
       unless motiveResultType.isSort do
         throwError "motive result type must be a sort{indentExpr motiveType}"
     let some motivePos ← pure (xs.indexOf? motive) |

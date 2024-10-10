@@ -384,10 +384,10 @@ extern "C" LEAN_EXPORT uint8 lean_expr_has_loose_bvar(b_obj_arg e, b_obj_arg i) 
     return has_loose_bvar(TO_REF(expr, e), lean_unbox(i));
 }
 
-optional<unsigned> lowest_loose_bvar(expr const & e) {
+unsigned lowest_loose_bvar(expr const & e) {
     buffer<nat> bvars;
     if (!has_loose_bvars(e))
-        return optional<unsigned>();
+        return 0;
     unsigned min_bvar = INT_MAX;
     for_each(e, [&](expr const & e, unsigned offset) {
             if (is_var(e) && bvar_idx(e) >= offset) {
@@ -396,7 +396,7 @@ optional<unsigned> lowest_loose_bvar(expr const & e) {
             }
             return true; // continue search
         });
-    return optional<unsigned>(min_bvar);
+    return min_bvar;
 }
 
 // TODO: use a more efficient structure to make checking for duplicates less expensive

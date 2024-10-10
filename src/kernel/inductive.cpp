@@ -1024,17 +1024,7 @@ struct elim_nested_inductive_fn {
             // std::cout << sorted_Is[i] << ",";
         }
         // std::cout << "]\n";
-
-        buffer<expr> lvars;
-        for (unsigned i = 0; i < Is.size(); i++) {
-            lvars.push_back(fvars[sorted_Is[i].get_small_value()]);
-        }
-
-        // std::cout << "local vars : [";
-        for (unsigned i = 0; i < lvars.size(); i++) {
-            // std::cout << lvars[i] << ",";
-        }
-        // std::cout << "]\n";        
+     
         buffer<expr> args;
         expr const & fn       = get_app_args(e, args);
         name const & I_name   = const_name(fn);
@@ -1050,11 +1040,23 @@ struct elim_nested_inductive_fn {
         expr Iparams = replace_params(IAs, As);
         // std::cout << "after replacing params : " << Iparams << "\n";
         //expr Iparams = IAs;
-        // std::cout << "before lowering : " << Iparams << "\n";
-        if (optional<unsigned> min_loose_bvar = lowest_loose_bvar(Iparams)) {
-            Iparams      = lower_loose_bvars(Iparams, 0, *min_loose_bvar);
-            // std::cout << "after lowering : " << Iparams << "\nmin_bvar: " << *min_loose_bvar << "\n"; 
-        }               
+        // std::cout << "before lowering : " << Iparams << "\n";  
+        unsigned min_loose_bvar = lowest_loose_bvar(Iparams);
+        if (min_loose_bvar)
+            Iparams = lower_loose_bvars(Iparams, 0, min_loose_bvar);
+
+        // std::cout << "after lowering : " << Iparams << "\nmin_bvar: " << min_loose_bvar << "\n"; 
+        buffer<expr> lvars;
+        for (unsigned i = 0; i < Is.size(); i++) {
+            lvars.push_back(fvars[sorted_Is[i].get_small_value()-min_loose_bvar]);
+        }
+
+        // std::cout << "local vars : [";
+        for (unsigned i = 0; i < lvars.size(); i++) {
+            // std::cout << lvars[i] << ",";
+        }
+        // std::cout << "]\n"; 
+
         for (pair<pair<expr,unsigned>, name> const & p : m_nested_aux) { 
             /* Remark: we could have used `is_def_eq` here instead of structural equality.
                It is probably not needed, but if one day we decide to do it, we have to populate
@@ -1091,11 +1093,7 @@ struct elim_nested_inductive_fn {
                 auxJ_type            = lctx.mk_pi(lvars, auxJ_type);
                 // std::cout << "step3 : " << auxJ_type << "\n";
                 auxJ_type            = lctx.mk_pi(As, auxJ_type);
-                // std::cout << "before lowering/step4 : " << auxJ_type << "\n";
-                if (optional<unsigned> min_loose_bvar = lowest_loose_bvar(auxJ_type)) {
-                    Iparams      = lower_loose_bvars(auxJ_type, 0, *min_loose_bvar);
-                    // std::cout << "after lowering : " << auxJ_type << "\nmin_bvar: " << *min_loose_bvar << "\n"; 
-                }                         
+                // std::cout << "step4 : " << auxJ_type << "\n";
                 m_nested_aux.push_back(mk_pair(mk_pair(JAs, Is.size()), auxJ_name));
                 if (J_name == I_name) {
                     /* Create result */                    

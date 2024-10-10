@@ -142,18 +142,18 @@ run_cmd Lean.Elab.Command.liftTermElabM do
 
 end Indexed
 
--- namespace InBinder
+namespace InBinder
 
--- inductive Foo : Type → Type 1
---   | mk {α : Type} : (Nat → Option (Foo (Unit × α))) → Foo α
+inductive Foo : Type → Type 1
+  | mk {α : Type} : (Nat → Option (Foo (Unit × α))) → Foo α
 
--- #check Foo.rec
+#check Foo.rec
 
--- run_cmd Lean.Elab.Command.liftTermElabM do
---   let cst ← Lean.getConstInfoRec ``Foo.rec
---   Lean.Meta.check cst.type
+run_cmd Lean.Elab.Command.liftTermElabM do
+  let cst ← Lean.getConstInfoRec ``Foo.rec
+  Lean.Meta.check cst.type
 
--- end InBinder
+end InBinder
 
 namespace Issue2195
 

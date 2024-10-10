@@ -7,7 +7,6 @@ Author: Leonardo de Moura
 #include <vector>
 #include <memory>
 #include "kernel/replace_store_types_fn.h"
-#include "kernel/cache_stack.h"
 
 namespace lean {
 class replace_rec_store_types_fn {

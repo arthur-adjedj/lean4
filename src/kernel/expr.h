@@ -156,7 +156,7 @@ inline bool has_fvar(expr const & e) {
 }
 bool has_univ_param(expr const & e);
 unsigned get_loose_bvar_range(expr const & e);
-optional<unsigned> lowest_loose_bvar(expr const & e);
+unsigned lowest_loose_bvar(expr const & e);
 buffer<nat> loose_bvars(expr const & e);
 
 struct expr_hash { unsigned operator()(expr const & e) const { return hash(e); } };

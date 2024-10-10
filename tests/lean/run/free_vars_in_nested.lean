@@ -4,116 +4,192 @@ set_option autoImplicit false
 set_option genSizeOfSpec false
 set_option pp.explicit true
 
--- namespace FvarsInParams
+namespace FvarsInParams
 
--- inductive Foo (n : Nat) (T : Type) (k : Nat) : Nat → Type
-  -- | foo : Nat → Foo n T k 0
---
--- inductive Bar : Type
-  -- | bar {n k : Nat}: Foo n Bar k 0 → Bar
+inductive Foo (n : Nat) (T : Type) (k : Nat) : Nat → Type
+  | foo : Nat → Foo n T k 0
 
--- /--
--- info: FvarsInParams.Bar.rec.{u} {motive_1 : Bar → Sort u} {motive_2 : {n k : Nat} → (a : Nat) → Foo n Bar k a → Sort u}
---   (bar : {n k : Nat} → (a : Foo n Bar k 0) → @motive_2 n k 0 a → motive_1 (@Bar.bar n k a))
---   (foo : {n k : Nat} → (a : Nat) → @motive_2 n k 0 (@Foo.foo n Bar k a)) (t : Bar) : motive_1 t
--- -/
--- #guard_msgs in
--- #check Bar.rec
+inductive Bar : Type
+  | bar {n k : Nat}: Foo n Bar k 0 → Bar
 
--- inductive Test : Nat → Type
---   | foo :{n : Nat} → List (Test n) → Test n.succ
+/--
+info: FvarsInParams.Bar.rec.{u} {motive_1 : Bar → Sort u} {motive_2 : {n k : Nat} → (a : Nat) → Foo n Bar k a → Sort u}
+  (bar : {n k : Nat} → (a : Foo n Bar k 0) → @motive_2 n k 0 a → motive_1 (@Bar.bar n k a))
+  (foo : {n k : Nat} → (a : Nat) → @motive_2 n k 0 (@Foo.foo n Bar k a)) (t : Bar) : motive_1 t
+-/
+#guard_msgs in
+#check Bar.rec
 
--- /--
--- info: FvarsInParams.Test.rec.{u} {motive_1 : (a : Nat) → Test a → Sort u} {motive_2 : {n : Nat} → List (Test n) → Sort u}
---   (foo : {n : Nat} → (a : List (Test n)) → @motive_2 n a → motive_1 n.succ (@Test.foo n a))
---   (nil : {n : Nat} → @motive_2 n (@List.nil (Test n)))
---   (cons :
---     {n : Nat} →
---       (head : Test n) →
---         (tail : List (Test n)) → motive_1 n head → @motive_2 n tail → @motive_2 n (@List.cons (Test n) head tail)) :
---   {a : Nat} → (t : Test a) → motive_1 a t
--- -/
--- #guard_msgs in
--- #check Test.rec
+run_cmd Lean.Elab.Command.liftTermElabM do
+  let cst ← Lean.getConstInfoRec ``Bar.rec
+  Lean.Meta.check cst.type
 
--- end FvarsInParams
--- namespace RegExp
+inductive Test : Nat → Type
+  | foo :{n : Nat} → List (Test n) → Test n.succ
 
--- universe u
+#check Test.below
 
--- inductive Regex : Type  where
---   | or : Regex → Regex → Regex
---   | and : Regex → Regex → Regex
---   | concat : Regex → Regex → Regex
---   | eps : Regex
+/--
+info: FvarsInParams.Test.rec.{u} {motive_1 : (a : Nat) → Test a → Sort u} {motive_2 : {n : Nat} → List (Test n) → Sort u}
+  (foo : {n : Nat} → (a : List (Test n)) → @motive_2 n a → motive_1 n.succ (@Test.foo n a))
+  (nil : {n : Nat} → @motive_2 n (@List.nil (Test n)))
+  (cons :
+    {n : Nat} →
+      (head : Test n) →
+        (tail : List (Test n)) → motive_1 n head → @motive_2 n tail → @motive_2 n (@List.cons (Test n) head tail)) :
+  {a : Nat} → (t : Test a) → motive_1 a t
+-/
+#guard_msgs in
+#check Test.rec
 
--- inductive Lang : Regex -> String -> Type 1 where
---   | eps : Lang Regex.eps ""
---   | or (str: String) (r1 r2: Regex):
---     Lang r1 str ⊕ Lang r2 str ->
---     Lang (Regex.or r1 r2) str
---   | and (str: String) (r1 r2: Regex):
---     Lang r1 str → Lang r2 str ->
---     Lang (Regex.and r1 r2) str
---   | concat (r1 : Regex) (str1 str2 : String) (r2 : Regex):
---     Lang r1 str1 → Lang r2 str2 → Lang (Regex.concat r1 r2) (str1 ++ str2)
+run_cmd Lean.Elab.Command.liftTermElabM do
+  let cst ← Lean.getConstInfoRec ``Test.rec
+  Lean.Meta.check cst.type
 
--- /--
--- info: RegExp.Lang.rec.{u} {motive_1 : (a : Regex) → (a_1 : String) → Lang a a_1 → Sort u}
---   {motive_2 : (str : String) → (r1 r2 : Regex) → Sum (Lang r1 str) (Lang r2 str) → Sort u}
---   (eps : motive_1 Regex.eps "" Lang.eps)
---   (or :
---     (str : String) →
---       (r1 r2 : Regex) →
---         (a : Sum (Lang r1 str) (Lang r2 str)) → motive_2 str r1 r2 a → motive_1 (r1.or r2) str (Lang.or str r1 r2 a))
---   (and :
---     (str : String) →
---       (r1 r2 : Regex) →
---         (a : Lang r1 str) →
---           (a_1 : Lang r2 str) →
---             motive_1 r1 str a → motive_1 r2 str a_1 → motive_1 (r1.and r2) str (Lang.and str r1 r2 a a_1))
---   (concat :
---     (r1 : Regex) →
---       (str1 str2 : String) →
---         (r2 : Regex) →
---           (a : Lang r1 str1) →
---             (a_1 : Lang r2 str2) →
---               motive_1 r1 str1 a →
---                 motive_1 r2 str2 a_1 →
---                   motive_1 (r1.concat r2)
---                     (@HAppend.hAppend String String String (@instHAppend String String.instAppendString) str1 str2)
---                     (Lang.concat r1 str1 str2 r2 a a_1))
---   (inl :
---     (str : String) →
---       (r1 r2 : Regex) →
---         (val : Lang r1 str) → motive_1 r1 str val → motive_2 str r1 r2 (@Sum.inl (Lang r1 str) (Lang r2 str) val))
---   (inr :
---     (str : String) →
---       (r1 r2 : Regex) →
---         (val : Lang r2 str) → motive_1 r2 str val → motive_2 str r1 r2 (@Sum.inr (Lang r1 str) (Lang r2 str) val)) :
---   {a : Regex} → {a_1 : String} → (t : Lang a a_1) → motive_1 a a_1 t
--- -/
--- #guard_msgs in
--- #check Lang.rec
 
--- end RegExp
+end FvarsInParams
+namespace RegExp
 
--- namespace Indexed
+universe u
 
--- inductive Foo : Type → Type 1
---   | mk {α : Type} : Option (Foo (Unit × α)) → Foo α
+inductive Regex : Type  where
+  | or : Regex → Regex → Regex
+  | and : Regex → Regex → Regex
+  | concat : Regex → Regex → Regex
+  | eps : Regex
 
--- /-- error: unknown identifier 'Fooz.rec' -/
--- #guard_msgs in
--- #check Fooz.rec
+inductive Lang : Regex -> String -> Type 1 where
+  | eps : Lang Regex.eps ""
+  | or (str: String) (r1 r2: Regex):
+    Lang r1 str ⊕ Lang r2 str ->
+    Lang (Regex.or r1 r2) str
+  | and (str: String) (r1 r2: Regex):
+    Lang r1 str → Lang r2 str ->
+    Lang (Regex.and r1 r2) str
+  | concat (r1 : Regex) (str1 str2 : String) (r2 : Regex):
+    Lang r1 str1 → Lang r2 str2 → Lang (Regex.concat r1 r2) (str1 ++ str2)
 
--- end Indexed
+/--
+info: RegExp.Lang.rec.{u} {motive_1 : (a : Regex) → (a_1 : String) → Lang a a_1 → Sort u}
+  {motive_2 : (str : String) → (r1 r2 : Regex) → Sum (Lang r1 str) (Lang r2 str) → Sort u}
+  (eps : motive_1 Regex.eps "" Lang.eps)
+  (or :
+    (str : String) →
+      (r1 r2 : Regex) →
+        (a : Sum (Lang r1 str) (Lang r2 str)) → motive_2 str r1 r2 a → motive_1 (r1.or r2) str (Lang.or str r1 r2 a))
+  (and :
+    (str : String) →
+      (r1 r2 : Regex) →
+        (a : Lang r1 str) →
+          (a_1 : Lang r2 str) →
+            motive_1 r1 str a → motive_1 r2 str a_1 → motive_1 (r1.and r2) str (Lang.and str r1 r2 a a_1))
+  (concat :
+    (r1 : Regex) →
+      (str1 str2 : String) →
+        (r2 : Regex) →
+          (a : Lang r1 str1) →
+            (a_1 : Lang r2 str2) →
+              motive_1 r1 str1 a →
+                motive_1 r2 str2 a_1 →
+                  motive_1 (r1.concat r2)
+                    (@HAppend.hAppend String String String (@instHAppendOfAppend String String.instAppend) str1 str2)
+                    (Lang.concat r1 str1 str2 r2 a a_1))
+  (inl :
+    (str : String) →
+      (r1 r2 : Regex) →
+        (val : Lang r1 str) → motive_1 r1 str val → motive_2 str r1 r2 (@Sum.inl (Lang r1 str) (Lang r2 str) val))
+  (inr :
+    (str : String) →
+      (r1 r2 : Regex) →
+        (val : Lang r2 str) → motive_1 r2 str val → motive_2 str r1 r2 (@Sum.inr (Lang r1 str) (Lang r2 str) val)) :
+  {a : Regex} → {a_1 : String} → (t : Lang a a_1) → motive_1 a a_1 t
+-/
+#guard_msgs in
+#check Lang.rec
 
-namespace InBinder
+run_cmd Lean.Elab.Command.liftTermElabM do
+  let cst ← Lean.getConstInfoRec ``Lang.rec
+  Lean.Meta.check cst.type
+
+end RegExp
+
+namespace Indexed
 
 inductive Foo : Type → Type 1
-  | mk {α : Type} : (Nat → Option (Foo (Unit × α))) → Foo α
+  | mk {α : Type} : Option (Foo (Unit × α)) → Foo α
 
+/-- info: Indexed.Foo.rec.{u} {motive_1 : (a : Type) → Foo a → Sort u}
+  {motive_2 : {α : Type} → Option (Foo (Prod Unit α)) → Sort u}
+  (mk : {α : Type} → (a : Option (Foo (Prod Unit α))) → @motive_2 α a → motive_1 α (@Foo.mk α a))
+  (none : {α : Type} → @motive_2 α (@none (Foo (Prod Unit α))))
+  (some :
+    {α : Type} → (val : Foo (Prod Unit α)) → motive_1 (Prod Unit α) val → @motive_2 α (@some (Foo (Prod Unit α)) val)) :
+  {a : Type} → (t : Foo a) → motive_1 a t -/
+#guard_msgs in
 #check Foo.rec
 
-end InBinder
+
+run_cmd Lean.Elab.Command.liftTermElabM do
+  let cst ← Lean.getConstInfoRec ``Foo.rec
+  Lean.Meta.check cst.type
+  for rule in cst.rules do
+    Lean.logInfo m!"{rule.ctor} : {Lean.indentExpr rule.rhs}"
+    Lean.Meta.check rule.rhs
+  let cst ← Lean.getConstInfoRec ``Foo.rec_1
+  for rule in cst.rules do
+    Lean.logInfo m!"{rule.ctor} : {Lean.indentExpr rule.rhs}"
+    Lean.Meta.check rule.rhs
+
+end Indexed
+
+-- namespace InBinder
+
+-- inductive Foo : Type → Type 1
+--   | mk {α : Type} : (Nat → Option (Foo (Unit × α))) → Foo α
+
+-- #check Foo.rec
+
+-- run_cmd Lean.Elab.Command.liftTermElabM do
+--   let cst ← Lean.getConstInfoRec ``Foo.rec
+--   Lean.Meta.check cst.type
+
+-- end InBinder
+
+namespace Issue2195
+
+universe u
+
+inductive Desc where
+  | intro
+    (name: String)
+    (hash: UInt64)
+    (params: List Desc)
+  : Desc
+  deriving Repr
+
+def hash_with_name (_name: String) (_params: List Desc): UInt64 := 0 -- mock hash function
+
+def Desc.intro_func (name: String) (params: List Desc): Desc :=
+  Desc.intro
+    name
+    (hash_with_name name params)
+    params
+
+inductive Forall {α : Type u} (p : α → Prop) : List α → Prop
+  | nil  : Forall p ([] : List α)
+  | cons : ∀ {x xs}, p x → Forall p xs → Forall p (x :: xs)
+
+inductive IsSmart : Desc → Prop
+  | isSmart: ∀
+    (d : Desc)
+    (name: String)
+    (params: List Desc)
+    (hash: UInt64)
+    (reader: Bool),
+    d = Desc.intro name hash params
+    → hash = hash_with_name name params
+    → reader = true
+    → Forall IsSmart params
+    → IsSmart d
+
+end Issue2195

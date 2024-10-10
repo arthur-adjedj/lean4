@@ -1042,9 +1042,12 @@ struct elim_nested_inductive_fn {
         //expr Iparams = IAs;
         // std::cout << "before lowering : " << Iparams << "\n";  
         unsigned min_loose_bvar = lowest_loose_bvar(Iparams);
-        if (min_loose_bvar)
+        if (min_loose_bvar) {
             Iparams = lower_loose_bvars(Iparams, 0, min_loose_bvar);
-
+            for (unsigned i = 0; i < args.size();i++) {
+                args[i] = lower_loose_bvars(args[i], 0, min_loose_bvar);
+            }
+        }
         // std::cout << "after lowering : " << Iparams << "\nmin_bvar: " << min_loose_bvar << "\n"; 
         buffer<expr> lvars;
         for (unsigned i = 0; i < Is.size(); i++) {

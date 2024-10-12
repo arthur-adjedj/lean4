@@ -7,19 +7,12 @@ inductive Nested where
   | nest : StructLike Nested → Nested
   | other
 
-/--
-info: @[defeq] theorem Nested.nest.sizeOf_spec : ∀ (a : StructLike Nested), sizeOf (Nested.nest a) = 1 + sizeOf a :=
-fun a => Eq.refl (1 + sizeOf a)
--/
-#guard_msgs in
-#print Nested.nest.sizeOf_spec
-
 /-- info: StructLike -/
 #guard_msgs in
 open Lean Meta in
 run_meta do
   let i ← getConstInfoRec ``Nested.rec_1
-  logInfo m!"{i.getMajorInduct}"
+  logInfo m!"{i.getInduct}"
 
 theorem works (x : StructLike Nested) : StructLike.rec
   (motive := fun _ => Bool)

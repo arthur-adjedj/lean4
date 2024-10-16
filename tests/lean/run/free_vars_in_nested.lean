@@ -1,13 +1,12 @@
 import Lean.Elab.Command
 import Lean.Meta
 
+open Lean Meta
+
 set_option autoImplicit false
 set_option genSizeOfSpec false
 set_option pp.explicit true
 
-inductive Tree where | node : List Tree → Tree
-
-open Lean Meta
 
 namespace FvarsInParams
 

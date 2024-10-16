@@ -844,7 +844,7 @@ struct elim_nested_inductive_result {
                 }
                 expr const & fn = get_app_fn(t);
                 if (is_constant(fn)) {
-                    if (pair<expr,unsigned> const * pack = m_aux2nested.find(const_name(fn))) {
+                    if (pair<expr, unsigned> const * pack    = m_aux2nested.find(const_name(fn))) {
                         expr nested                          = pack->first;
                         unsigned n_additional_indices        = pack->second;                        
                         buffer<expr> args;
@@ -854,9 +854,9 @@ struct elim_nested_inductive_result {
                         buffer<expr> add_args;
                         for (unsigned i = 0; i < n_additional_indices; i++) {
                             add_args.push_back(args[m_params.size()+i]); 
-                        }                                                  
+                        }                                            
                         expr new_nested = replace_fvars(nested, m_params.size(), m_params.data(), As.data());
-                             new_nested = instantiate_rev(nested, add_args);  
+                             new_nested = instantiate_rev(new_nested, add_args);  
     
                         buffer<expr> real_args;
                         for (unsigned i = 0; i < args.size() - m_params.size() - n_additional_indices; i++) {
@@ -947,9 +947,9 @@ struct elim_nested_inductive_fn {
 
     /* IF `e` is of the form `I Ds is` where `I` is a nested inductive datatype (i.e., a previously declared inductive datatype),  
        THEN return the `inductive_val` in the `constant_info` associated with `I`, 
-       along with the loose bvars present in the `e`
+       along with the loose bvars present in the `I Ds`
        Otherwise, return none. */
-    optional<pair<inductive_val,buffer<nat>>> is_nested_inductive_app(local_ctx const & lctx,expr const & e) {
+    optional<pair<inductive_val,buffer<nat>>> is_nested_inductive_app(expr const & e) {
         if (!is_app(e)) return optional<pair<inductive_val,buffer<nat>>> ();
         expr const & fn = get_app_fn(e);
         if (!is_constant(fn)) return optional<pair<inductive_val,buffer<nat>>> ();
@@ -958,8 +958,8 @@ struct elim_nested_inductive_fn {
         unsigned nparams = info->to_inductive_val().get_nparams();
         unsigned nindices = info->to_inductive_val().get_nindices();
         buffer<expr> args;
-        get_app_args_at_most(e, nindices, args);
-        buffer<nat> bvars = loose_bvars(e);
+        expr I_Ds = get_app_args_at_most(e, nindices, args);
+        buffer<nat> bvars = loose_bvars(I_Ds);
         // bvars.sort();
         get_app_args(e,args);
         if (nparams > args.size()) return optional<pair<inductive_val,buffer<nat>>> ();
@@ -1007,7 +1007,7 @@ struct elim_nested_inductive_fn {
             // std::cout << fvars[i] << ",";
         }
         // std::cout << "]\n";
-        optional<pair<inductive_val,buffer<nat>>> I = is_nested_inductive_app(lctx, e);
+        optional<pair<inductive_val,buffer<nat>>> I = is_nested_inductive_app(e);
         if (!I) return none_expr();
         /* `e` is of the form `I As is` where `As` are the parameters and `is` the indices */
         inductive_val I_val = I->first;
@@ -1039,11 +1039,11 @@ struct elim_nested_inductive_fn {
            We need this step because we re-create parameters for each constructor with the correct binding info */
         expr Iparams = replace_params(IAs, As);
         // std::cout << "after replacing params : " << Iparams << "\n";
-        //expr Iparams = IAs;
         // std::cout << "before lowering : " << Iparams << "\n";  
         unsigned min_loose_bvar = lowest_loose_bvar(Iparams);
         if (min_loose_bvar) {
             Iparams = lower_loose_bvars(Iparams, 0, min_loose_bvar);
+            /* do we need to do this on all args ? why not just for i < I_nparams ?*/
             for (unsigned i = 0; i < args.size();i++) {
                 args[i] = lower_loose_bvars(args[i], 0, min_loose_bvar);
             }
@@ -1073,10 +1073,13 @@ struct elim_nested_inductive_fn {
         }
         if (auxI_name) {
             expr auxI = mk_constant(*auxI_name, m_lvls);
+            // std::cout << "auxI (1): " << auxI << "\n"; 
             auxI      = mk_app(auxI, As);
+            // std::cout << "auxI (2): " << auxI << "\n"; 
             auxI      = mk_rev_app(auxI, sorted_Is);
+            // std::cout << "auxI (3): " << auxI << "\n"; 
             auxI      = mk_app(auxI, args.size() - I_nparams, args.data() + I_nparams);
-            // std::cout << "auxI : " << auxI << "\n"; 
+            // std::cout << "auxI (4): " << auxI << "\n"; 
             return some_expr(auxI);
         } else {
             optional<expr> result;

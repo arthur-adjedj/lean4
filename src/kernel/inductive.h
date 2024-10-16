@@ -103,7 +103,9 @@ inline optional<expr> inductive_reduce_rec(environment const & env, expr const &
     if (length(const_levels(rec_fn)) != length(rec_info->get_lparams())) return none_expr();
     expr rhs = instantiate_lparams(rule->get_rhs(), rec_info->get_lparams(), const_levels(rec_fn));
     /* apply parameters, motives and minor premises from recursor application. */
-    rhs      = mk_app(rhs, rec_val.get_nparams() + rec_val.get_nmotives() + rec_val.get_nminors(), rec_args.data());
+    inductive_val major_induct = env.find(rec_val.get_induct())->to_inductive_val();
+    unsigned added_indices = rec_val.get_nindices() - major_induct.get_nindices();  
+    rhs      = mk_app(rhs, rec_val.get_nparams() + rec_val.get_nmotives() + rec_val.get_nminors() + added_indices, rec_args.data());
     /* The number of parameters in the constructor is not necessarily
        equal to the number of parameters in the recursor when we have
        nested inductive types. */

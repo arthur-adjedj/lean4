@@ -1254,7 +1254,8 @@ environment environment::add_inductive(declaration const & d) const {
                     /* We need to fix the constructor name */
                     new_cnstr_name  = res.restore_constructor_name(aux_env, cnstr_name);
                 }
-                new_rules.push_back(recursor_rule(new_cnstr_name, rule.get_nfields(), new_rhs));
+                constructor_val cnstr = new_env.find(new_cnstr_name)->to_constructor_val();
+                new_rules.push_back(recursor_rule(new_cnstr_name, cnstr.get_nfields(), new_rhs));
             }
             new_env.check_name(new_rec_name);
             new_env.add_core(constant_info(recursor_val(new_rec_name, rec_info.get_lparams(), new_rec_type,

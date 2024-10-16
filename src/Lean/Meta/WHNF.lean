@@ -184,7 +184,10 @@ private def cleanupNatOffsetMajor (e : Expr) : MetaM Expr := do
 private def reduceRec (recVal : RecursorVal) (recLvls : List Level) (recArgs : Array Expr) (failK : Unit → MetaM α) (successK : Expr → MetaM α) : MetaM α :=
   let majorIdx := recVal.getMajorIdx
   if h : majorIdx < recArgs.size then do
+    trace[Meta.whnf] "reduceRec {recVal.name} {recArgs}"
+    trace[Meta.whnf] "majorIdx : {majorIdx}"
     let major := recArgs.get ⟨majorIdx, h⟩
+    trace[Meta.whnf] "major : {major}"
     let mut major ← if isWFRec recVal.name && (← getTransparency) == .default then
       -- If recursor is `Acc.rec` or `WellFounded.rec` and transparency is default,
       -- then we bump transparency to .all to make sure we can unfold defs defined by WellFounded recursion.
@@ -201,18 +204,28 @@ private def reduceRec (recVal : RecursorVal) (recLvls : List Level) (recArgs : A
     match getRecRuleFor recVal major with
     | some rule =>
       let majorArgs := major.getAppArgs
+      trace[Meta.whnf] "majorArgs : {majorArgs}"
       if recLvls.length != recVal.levelParams.length then
         failK ()
       else
+        let majorInduct ← getConstInfoInduct recVal.getInduct
+        let addedIndices := recVal.numIndices - majorInduct.numIndices
+        trace[Meta.whnf] "addedIndices : {addedIndices}"
         let rhs := rule.rhs.instantiateLevelParams recVal.levelParams recLvls
+        trace[Meta.whnf] "rhs (1) : {rhs}"
         -- Apply parameters, motives and minor premises from recursor application.
-        let rhs := mkAppRange rhs 0 (recVal.numParams+recVal.numMotives+recVal.numMinors) recArgs
+        let rhs := mkAppRange rhs 0 (recVal.numParams+recVal.numMotives+recVal.numMinors+addedIndices) recArgs
+        trace[Meta.whnf] "rhs (2) : {rhs}"
         /- The number of parameters in the constructor is not necessarily
            equal to the number of parameters in the recursor when we have
            nested inductive types. -/
+        trace[Meta.whnf] "nfields : {rule.nfields}"
         let nparams := majorArgs.size - rule.nfields
+        trace[Meta.whnf] "nparams : {nparams}"
         let rhs := mkAppRange rhs nparams majorArgs.size majorArgs
+        trace[Meta.whnf] "rhs (3) : {rhs}"
         let rhs := mkAppRange rhs (majorIdx + 1) recArgs.size recArgs
+        trace[Meta.whnf] "rhs (4) : {rhs}"
         successK rhs
     | none => failK ()
   else

@@ -247,28 +247,20 @@ private def reduceRec (recVal : RecursorVal) (recLvls : List Level) (recArgs : A
     match getRecRuleFor recVal major with
     | some rule =>
       let majorArgs := major.getAppArgs
-      trace[Meta.whnf] "majorArgs : {majorArgs}"
       if recLvls.length != recVal.levelParams.length then
         failK ()
       else
         let majorInduct ← getConstInfoInduct recVal.getInduct
         let addedIndices := recVal.numIndices - majorInduct.numIndices
-        trace[Meta.whnf] "addedIndices : {addedIndices}"
         let rhs := rule.rhs.instantiateLevelParams recVal.levelParams recLvls
-        trace[Meta.whnf] "rhs (1) : {rhs}"
         -- Apply parameters, motives and minor premises from recursor application.
         let rhs := mkAppRange rhs 0 (recVal.numParams+recVal.numMotives+recVal.numMinors+addedIndices) recArgs
-        trace[Meta.whnf] "rhs (2) : {rhs}"
         /- The number of parameters in the constructor is not necessarily
            equal to the number of parameters in the recursor when we have
            nested inductive types. -/
-        trace[Meta.whnf] "nfields : {rule.nfields}"
         let nparams := majorArgs.size - rule.nfields
-        trace[Meta.whnf] "nparams : {nparams}"
         let rhs := mkAppRange rhs nparams majorArgs.size majorArgs
-        trace[Meta.whnf] "rhs (3) : {rhs}"
         let rhs := mkAppRange rhs (majorIdx + 1) recArgs.size recArgs
-        trace[Meta.whnf] "rhs (4) : {rhs}"
         successK rhs
     | none => failK ()
   else

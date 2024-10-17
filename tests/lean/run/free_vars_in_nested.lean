@@ -28,9 +28,24 @@ run_cmd Lean.Elab.Command.liftTermElabM do
   let cst ← Lean.getConstInfoRec ``Bar.rec
   Lean.Meta.check cst.type
 
-
+/- Trees of depth at most n-/
 inductive Test : Nat → Type
-  | foo :{n : Nat} → List (Test n) → Test n.succ
+  | foo {n : Nat} :List (Test n) → Test n.succ
+
+mutual
+def Test.sum {n}: Test n → Nat
+  | .foo l => ListTest.sum l + 1
+
+def ListTest.sum {n}: List (Test n) → Nat
+  | [] => 0
+  | h::t => h.sum + ListTest.sum t
+end
+
+def foo : Test 3 := ⟨[⟨[⟨[]⟩,⟨[]⟩,⟨[]⟩,⟨[]⟩,⟨[]⟩]⟩,⟨[⟨[]⟩]⟩,⟨[]⟩]⟩
+
+/-- info: 10 -/
+#guard_msgs in
+#reduce foo.sum
 
 /--
 info: FvarsInParams.Test.rec.{u} {motive_1 : (a : Nat) → Test a → Sort u} {motive_2 : {n : Nat} → List (Test n) → Sort u}
@@ -62,10 +77,10 @@ inductive Lang : Regex -> String -> Type 1 where
     Lang r1 str ⊕ Lang r2 str ->
     Lang (Regex.or r1 r2) str
   | and (str: String) (r1 r2: Regex):
-    Lang r1 str → Lang r2 str ->
+    (Lang r1 str × Lang r2 str) ->
     Lang (Regex.and r1 r2) str
   | concat (r1 : Regex) (str1 str2 : String) (r2 : Regex):
-    Lang r1 str1 → Lang r2 str2 → Lang (Regex.concat r1 r2) (str1 ++ str2)
+    (Lang r1 str1 × Lang r2 str2) → Lang (Regex.concat r1 r2) (str1 ++ str2)
 /--
 info: RegExp.Lang.rec.{u} {motive_1 : (a : Regex) → (a_1 : String) → Lang a a_1 → Sort u}
   {motive_2 : (str : String) → (r1 r2 : Regex) → Sum (Lang r1 str) (Lang r2 str) → Sort u}
@@ -124,18 +139,6 @@ inductive Foo : Type → Type 1
   {a : Type} → (t : Foo a) → motive_1 a t -/
 #guard_msgs in
 #check Foo.rec
-
-
-run_cmd Lean.Elab.Command.liftTermElabM do
-  let cst ← Lean.getConstInfoRec ``Foo.rec
-  Lean.Meta.check cst.type
-  for rule in cst.rules do
-    Lean.logInfo m!"{rule.ctor} : {Lean.indentExpr rule.rhs}"
-    Lean.Meta.check rule.rhs
-  let cst ← Lean.getConstInfoRec ``Foo.rec_1
-  for rule in cst.rules do
-    Lean.logInfo m!"{rule.ctor} : {Lean.indentExpr rule.rhs}"
-    Lean.Meta.check rule.rhs
 
 end Indexed
 

@@ -587,7 +587,7 @@ public:
         return *r;
     }
 
-    void mk_motive_arg(unsigned d_idx, inductive_type const & ind_type, const expr u_i, const expr u_i_ty, buffer<expr> const & xs, buffer<expr> const & u, buffer<expr> & v) {
+    expr mk_motive_arg(const expr u_i_ty, buffer<expr> const & u, buffer<expr> & v) {
             buffer<expr> it_indices;
             unsigned it_idx = get_I_indices(u_i_ty, it_indices);
             expr C_app  = m_rec_infos[it_idx].m_C;
@@ -597,7 +597,7 @@ public:
                 expr index_ty = whnf(infer_type(index));
                 if (is_rec_argument(index_ty)) {
                     if (is_fvar(index)) {
-                        for (unsigned j = 0; i < j; j++) {
+                        for (unsigned j = 0; j <= i; j++) {
                             if (index == u[j]) {
                                 expr v_j = v[j];
                                 C_app = mk_app(C_app, v_j);
@@ -616,12 +616,7 @@ public:
                     } 
                 }
             }
-            expr u_app  = mk_app(u_i, xs);
-            C_app = mk_app(C_app, u_app);
-            expr v_i_ty = mk_pi(xs, C_app);
-            local_decl u_i_decl = m_lctx.get_local_decl(fvar_name(u_i));
-            expr v_i    = mk_local_decl(u_i_decl.get_user_name().append_after("_ih"), v_i_ty, binder_info());
-            v.push_back(v_i);
+        return C_app;
     }
 
     /** \brief Populate m_rec_infos. */
@@ -700,10 +695,7 @@ public:
                     i++;
                 }
                 buffer<expr> it_indices;
-                unsigned it_idx = get_I_indices(t, it_indices);
-                expr C_app      = mk_app(m_rec_infos[it_idx].m_C, it_indices);
-                expr intro_app  = mk_app(mk_app(mk_constant(cnstr_name, m_levels), m_params), b_u);
-                C_app = mk_app(C_app, intro_app);
+                unsigned it_idx = get_I_indices(t, it_indices);                
                 /* populate v using u */
                 for (unsigned i = 0; i < u.size(); i++) {
                     expr u_i    = u[i];
@@ -714,8 +706,17 @@ public:
                         xs.push_back(x);
                         u_i_ty = whnf(instantiate(binding_body(u_i_ty), x));
                     }
-                    mk_motive_arg(d_idx, ind_type, u_i, u_i_ty, xs, u, v);
+                    expr motive = mk_motive_arg(u_i_ty, u, v);
+                    expr u_app  = mk_app(u_i, xs);
+                    motive = mk_app(motive, u_app);
+                    expr v_i_ty = mk_pi(xs, motive);
+                    local_decl u_i_decl = m_lctx.get_local_decl(fvar_name(u_i));
+                    expr v_i    = mk_local_decl(u_i_decl.get_user_name().append_after("_ih"), v_i_ty, binder_info());
+                    v.push_back(v_i);
                 }
+                expr C_app      = mk_motive_arg(t, u, v);
+                expr intro_app  = mk_app(mk_app(mk_constant(cnstr_name, m_levels), m_params), b_u);
+                C_app = mk_app(C_app, intro_app);
                 expr minor_ty   = mk_pi(b_u, mk_pi(v, C_app));
                 name minor_name = cnstr_name.replace_prefix(ind_type_name, name());
                 expr minor      = mk_local_decl(minor_name, minor_ty);

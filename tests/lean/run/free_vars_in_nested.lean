@@ -29,36 +29,54 @@ run_cmd Lean.Elab.Command.liftTermElabM do
   Lean.Meta.check cst.type
 
 /- Trees of depth at most n-/
-inductive Test : Nat → Type
-  | foo {n : Nat} :List (Test n) → Test n.succ
+inductive DepthTree : Nat → Type
+  | foo {n : Nat} : List (DepthTree n) → DepthTree (n+1)
 
 mutual
-def Test.sum {n}: Test n → Nat
-  | .foo l => ListTest.sum l + 1
+def DepthTree.sum {n}: DepthTree n → Nat
+  | .foo l => 1+ListTest.sum l
 
-def ListTest.sum {n}: List (Test n) → Nat
+def ListTest.sum {n}: List (DepthTree n) → Nat
   | [] => 0
   | h::t => h.sum + ListTest.sum t
 end
 
-def foo : Test 3 := ⟨[⟨[⟨[]⟩,⟨[]⟩,⟨[]⟩,⟨[]⟩,⟨[]⟩]⟩,⟨[⟨[]⟩]⟩,⟨[]⟩]⟩
+def foo : DepthTree 4 :=
+⟨[
+  ⟨[
+    ⟨[⟨[]⟩,⟨[]⟩]⟩,
+    ⟨[]⟩,
+    ⟨[]⟩,
+    ⟨[]⟩,
+    ⟨[]⟩
+  ]⟩,
+  ⟨[
+    ⟨[]⟩
+  ]⟩,
+  ⟨[]⟩
+]⟩
 
-/-- info: 10 -/
+/-- info: 12 -/
 #guard_msgs in
 #reduce foo.sum
 
 /--
-info: FvarsInParams.Test.rec.{u} {motive_1 : (a : Nat) → Test a → Sort u} {motive_2 : {n : Nat} → List (Test n) → Sort u}
-  (foo : {n : Nat} → (a : List (Test n)) → @motive_2 n a → motive_1 n.succ (@Test.foo n a))
-  (nil : {n : Nat} → @motive_2 n (@List.nil (Test n)))
+info: FvarsInParams.DepthTree.rec.{u} {motive_1 : (a : Nat) → DepthTree a → Sort u}
+  {motive_2 : {n : Nat} → List (DepthTree n) → Sort u}
+  (foo :
+    {n : Nat} →
+      (a : List (DepthTree n)) →
+        @motive_2 n a → motive_1 (@HAdd.hAdd Nat Nat Nat (@instHAdd Nat instAddNat) n 1) (@DepthTree.foo n a))
+  (nil : {n : Nat} → @motive_2 n (@List.nil (DepthTree n)))
   (cons :
     {n : Nat} →
-      (head : Test n) →
-        (tail : List (Test n)) → motive_1 n head → @motive_2 n tail → @motive_2 n (@List.cons (Test n) head tail)) :
-  {a : Nat} → (t : Test a) → motive_1 a t
+      (head : DepthTree n) →
+        (tail : List (DepthTree n)) →
+          motive_1 n head → @motive_2 n tail → @motive_2 n (@List.cons (DepthTree n) head tail)) :
+  {a : Nat} → (t : DepthTree a) → motive_1 a t
 -/
 #guard_msgs in
-#check Test.rec
+#check DepthTree.rec
 
 end FvarsInParams
 namespace RegExp
@@ -66,35 +84,39 @@ namespace RegExp
 universe u
 
 inductive Regex : Type  where
+  | eps : Regex
   | or : Regex → Regex → Regex
+  | char : Char → Regex
   | and : Regex → Regex → Regex
   | concat : Regex → Regex → Regex
-  | eps : Regex
 
-inductive Lang : Regex -> String -> Type 1 where
-  | eps : Lang Regex.eps ""
+inductive Lang : Regex → String → Type where
+  | eps :
+    Lang .eps ""
   | or (str: String) (r1 r2: Regex):
-    Lang r1 str ⊕ Lang r2 str ->
-    Lang (Regex.or r1 r2) str
+    Lang r1 str ⊕ Lang r2 str →
+    Lang (.or r1 r2) str
+  | char (c : Char) :
+    Lang (.char c) c.toString
   | and (str: String) (r1 r2: Regex):
-    (Lang r1 str × Lang r2 str) ->
-    Lang (Regex.and r1 r2) str
+    Lang r1 str × Lang r2 str →
+    Lang (.and r1 r2) str
   | concat (r1 : Regex) (str1 str2 : String) (r2 : Regex):
-    (Lang r1 str1 × Lang r2 str2) → Lang (Regex.concat r1 r2) (str1 ++ str2)
+    Lang r1 str1 → Lang r2 str2 → Lang (.concat r1 r2) (str1 ++ str2)
 /--
 info: RegExp.Lang.rec.{u} {motive_1 : (a : Regex) → (a_1 : String) → Lang a a_1 → Sort u}
   {motive_2 : (str : String) → (r1 r2 : Regex) → Sum (Lang r1 str) (Lang r2 str) → Sort u}
+  {motive_3 : (str : String) → (r1 r2 : Regex) → Prod (Lang r1 str) (Lang r2 str) → Sort u}
   (eps : motive_1 Regex.eps "" Lang.eps)
   (or :
     (str : String) →
       (r1 r2 : Regex) →
         (a : Sum (Lang r1 str) (Lang r2 str)) → motive_2 str r1 r2 a → motive_1 (r1.or r2) str (Lang.or str r1 r2 a))
+  (char : (c : Char) → motive_1 (Regex.char c) c.toString (Lang.char c))
   (and :
     (str : String) →
       (r1 r2 : Regex) →
-        (a : Lang r1 str) →
-          (a_1 : Lang r2 str) →
-            motive_1 r1 str a → motive_1 r2 str a_1 → motive_1 (r1.and r2) str (Lang.and str r1 r2 a a_1))
+        (a : Prod (Lang r1 str) (Lang r2 str)) → motive_3 str r1 r2 a → motive_1 (r1.and r2) str (Lang.and str r1 r2 a))
   (concat :
     (r1 : Regex) →
       (str1 str2 : String) →
@@ -113,7 +135,14 @@ info: RegExp.Lang.rec.{u} {motive_1 : (a : Regex) → (a_1 : String) → Lang a 
   (inr :
     (str : String) →
       (r1 r2 : Regex) →
-        (val : Lang r2 str) → motive_1 r2 str val → motive_2 str r1 r2 (@Sum.inr (Lang r1 str) (Lang r2 str) val)) :
+        (val : Lang r2 str) → motive_1 r2 str val → motive_2 str r1 r2 (@Sum.inr (Lang r1 str) (Lang r2 str) val))
+  (mk :
+    (str : String) →
+      (r1 r2 : Regex) →
+        (fst : Lang r1 str) →
+          (snd : Lang r2 str) →
+            motive_1 r1 str fst →
+              motive_1 r2 str snd → motive_3 str r1 r2 (@Prod.mk (Lang r1 str) (Lang r2 str) fst snd)) :
   {a : Regex} → {a_1 : String} → (t : Lang a a_1) → motive_1 a a_1 t
 -/
 #guard_msgs in

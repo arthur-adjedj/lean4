@@ -60,20 +60,37 @@ run_cmd Command.liftTermElabM do
 /--
 info: Ty.rec.{u} {motive_1 : Con → Sort u} {motive_2 : (Γ : Con) → motive_1 Γ → Ty Γ → Sort u} (nil : motive_1 Con.nil)
   {ext : (Γ : Con) → (A : Ty Γ) → (Γ_ih : motive_1 Γ) → motive_2 Γ Γ_ih A → motive_1 (Γ.ext A)}
-  (U : (Γ : Con) → motive_1 Γ → motive_2 Γ (Ty.U Γ))
+  (U : (Γ : Con) → (Γ_ih : motive_1 Γ) → motive_2 Γ Γ_ih (Ty.U Γ))
   (Pi :
     (Γ : Con) →
       (A : Ty Γ) →
         (B : Ty (Γ.ext A)) →
-          (Γ_ih : motive_1 Γ) → motive_2 Γ Γ_ih A → motive_2 (Γ.ext A) (ext Γ A) B → motive_2 Γ (Ty.Pi Γ A B))
-  {Γ : Con} (t : Ty Γ) : motive_2 Γ (@Con.rec motive_1 motive_2 nil ext U Pi Γ) t
+          (Γ_ih : motive_1 Γ) →
+            (A_ih : motive_2 Γ Γ_ih A) → motive_2 (Γ.ext A) (ext Γ A Γ_ih A_ih) B → motive_2 Γ Γ_ih (Ty.Pi Γ A B))
+  {Γ : Con} (t : Ty Γ) : motive_2 Γ (Con.rec nil U Pi Γ) t
 -/
 #guard_msgs in
 #check Ty.rec
 
+run_cmd Command.liftTermElabM do
+  let recInfo ← getConstInfoRec ``Ty.rec
+  for rule in recInfo.rules do
+    logInfo m!"{rule.ctor} : {indentExpr rule.rhs}"
 /-TODO tail or recursor should be of the form
 `{Γ : Con} → (t : Ty Γ) → motive_2 Γ (@Con.rec motive_1 motive_2 nil ext U Pi Γ) t`
 -/
 
-def Ty.wk  := by
-  refine @Ty.rec
+def type_of (_x : α) := α
+
+run_cmd Command.liftTermElabM do
+  let recInfo ← getConstInfoRec ``Ty.rec
+  check recInfo.type
+
+-- #check
+--    @Ty.rec.{1}
+--     (fun Γ => ∀ Γ A, Ty (Γ.ext A))
+--     (fun Γ _ _ => ∀ A, Ty (Γ.ext A))
+--     (fun A => .U _)
+--     (fun Γ A Γ_ih A_ih B => by dsimp at Γ_ih;dsimp at A_ih;)
+--     (fun Γ Γ_ih A => Γ.ext A)
+--     (sorryAx.{1} _ _)

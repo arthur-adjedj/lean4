@@ -608,10 +608,21 @@ public:
                         buffer<expr> args;
                         expr f = get_app_args(index, args);
                         name f_name = const_name(f);
-                        // std::cout << "Checking " << f_name << "\n\n";
-                        // throw kernel_exception(m_env,std::to_string((m_rec_infos[d_idx].m_minor_names.size())).c_str() );
                         expr rec_arg  = *m_minor_names.find(f_name);
                         rec_arg = mk_app(rec_arg, args);
+                        for (unsigned i_arg = 0; i < args.size();i++) {
+                            expr arg = args[i];
+                            expr arg_ty = whnf(infer_type(arg));
+                            if (is_rec_argument(arg_ty) && is_fvar(arg)) {
+                                for (unsigned j = 0; j <= i; j++) {
+                                    if (arg == u[j]) {
+                                        expr v_j = v[j];
+                                        rec_arg = mk_app(rec_arg, v_j);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
                         C_app   = mk_app(C_app, rec_arg);
                     } 
                 }
@@ -803,6 +814,43 @@ public:
         return recursor_rules(rules);
     }
 
+    expr mk_final_motive(unsigned d_idx, buffer<expr> Cs, buffer<expr> minors) {
+        rec_info const & info = m_rec_infos[d_idx];
+        expr rec_ty  = info.m_C;
+        for (unsigned i = 0; i < info.m_indices.size(); i++) {
+            expr index = info.m_indices[i];
+            rec_ty = mk_app(rec_ty, index);
+            expr index_ty = whnf(infer_type(index));
+            auto j_idx = is_rec_argument(index_ty);
+            if (j_idx) {
+                rec_info const & j_info = m_rec_infos[*j_idx];
+                expr motive = mk_const(mk_rec_name(m_ind_types[*j_idx].get_name()),get_rec_levels());
+                motive = mk_app(motive,m_params);
+                motive = mk_app(motive,Cs);
+                motive = mk_app(motive,minors);
+                /* this works only for very simple inductive-inductive types, eg when two types are defined mutually but the first one is not indexed by anything
+                   A more complete example would need to handle:
+                   - inductive-inductive where the former inductive is indexed (possibly by other inductives)
+                   - large induction-induction, e.g
+                    ```
+                        inductive Foo : Type where ...
+                        inductive Bar : (Nat -> Foo) -> Foo where ...
+                    ```
+                */
+                motive = mk_app(motive,index);
+                rec_ty = mk_app(rec_ty,motive);
+            }
+        }
+        rec_ty = mk_app(rec_ty, info.m_major);
+        rec_ty = mk_pi(info.m_major, rec_ty);
+        rec_ty = mk_pi(info.m_indices, rec_ty);
+        rec_ty = mk_pi(minors, rec_ty);
+        rec_ty = mk_pi(Cs, rec_ty);
+        rec_ty = mk_pi(m_params, rec_ty);
+        rec_ty = infer_implicit(rec_ty, true /* strict */);
+        return rec_ty;
+    }
+
     /** \brief Declare recursors. */
     void declare_recursors() {
         buffer<expr> Cs; collect_Cs(Cs);
@@ -813,13 +861,7 @@ public:
         unsigned minor_idx = 0;
         for (unsigned d_idx = 0; d_idx < m_ind_types.size(); d_idx++) {
             rec_info const & info = m_rec_infos[d_idx];
-            expr C_app            = mk_app(mk_app(info.m_C, info.m_indices), info.m_major);
-            expr rec_ty           = mk_pi(info.m_major, C_app);
-            rec_ty                = mk_pi(info.m_indices, rec_ty);
-            rec_ty                = mk_pi(minors, rec_ty);
-            rec_ty                = mk_pi(Cs, rec_ty);
-            rec_ty                = mk_pi(m_params, rec_ty);
-            rec_ty                = infer_implicit(rec_ty, true /* strict */);
+            expr rec_ty           = mk_final_motive(d_idx, Cs, minors);
             recursor_rules rules  = mk_rec_rules(d_idx, Cs, minors, minor_idx);
             name rec_name         = mk_rec_name(m_ind_types[d_idx].get_name());
             names rec_lparams     = get_rec_lparams();

@@ -42,7 +42,6 @@ def indind : Declaration :=
   }
   .inductDecl [] 0 [con,ty] false
 
-
 /-
 mutual
 inductive Con : Type where
@@ -76,21 +75,18 @@ run_cmd Command.liftTermElabM do
   let recInfo ← getConstInfoRec ``Ty.rec
   for rule in recInfo.rules do
     logInfo m!"{rule.ctor} : {indentExpr rule.rhs}"
-/-TODO tail or recursor should be of the form
-`{Γ : Con} → (t : Ty Γ) → motive_2 Γ (@Con.rec motive_1 motive_2 nil ext U Pi Γ) t`
--/
-
-def type_of (_x : α) := α
 
 run_cmd Command.liftTermElabM do
   let recInfo ← getConstInfoRec ``Ty.rec
   check recInfo.type
+  for rule in recInfo.rules do
+    check rule.rhs
 
--- #check
---    @Ty.rec.{1}
---     (fun Γ => ∀ Γ A, Ty (Γ.ext A))
---     (fun Γ _ _ => ∀ A, Ty (Γ.ext A))
---     (fun A => .U _)
---     (fun Γ A Γ_ih A_ih B => by dsimp at Γ_ih;dsimp at A_ih;)
---     (fun Γ Γ_ih A => Γ.ext A)
---     (sorryAx.{1} _ _)
+#check
+   @Ty.rec.{1}
+    (fun Γ => ∀ Γ A, Ty (Γ.ext A))
+    (fun Γ _ _ => ∀ A, Ty (Γ.ext A))
+    (fun A => .U _)
+    (fun Γ A Γ_ih A_ih B => sorryAx.{1} _ _)
+    (fun Γ Γ_ih A => Γ.ext A)
+    (sorryAx.{1} _ _)

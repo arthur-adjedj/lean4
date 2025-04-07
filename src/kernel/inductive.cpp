@@ -235,6 +235,10 @@ public:
                     }
                     i++;
                 } else {
+                    expr domain_ty = binding_domain(type);
+                    if (has_ind_occ(domain_ty) && !is_valid_ind_app(domain_ty)) {
+                        throw kernel_exception(m_env, "invalid inductive-inductive declaration");
+                    }
                     expr local = mk_local_decl_for(type);
                     type = instantiate(binding_body(type), local);
                     m_nindices.back()++;
@@ -821,7 +825,7 @@ public:
             expr index = info.m_indices[i];
             rec_ty = mk_app(rec_ty, index);
             expr index_ty = whnf(infer_type(index));
-            auto j_idx = is_rec_argument(index_ty);
+            auto j_idx = is_valid_ind_app(index_ty);
             if (j_idx) {
                 rec_info const & j_info = m_rec_infos[*j_idx];
                 expr motive = mk_const(mk_rec_name(m_ind_types[*j_idx].get_name()),get_rec_levels());

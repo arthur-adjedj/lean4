@@ -210,12 +210,13 @@ public:
        - m_params
 
        \remark The local context m_lctx contains the free variables in m_params. */
-    void check_inductive_types() {
+    void check_and_declare_inductive_types() {
         m_levels   = lparams_to_levels(m_lparams);
         bool first = true;
-        for (inductive_type const & ind_type : m_ind_types) {
+        for (unsigned idx = 0; idx < m_ind_types.size();idx++) {
+            inductive_type const & ind_type = m_ind_types[idx];
             expr type = ind_type.get_type();
-            // m_env.check_name(ind_type.get_name());
+            m_env.check_name(ind_type.get_name());
             m_env.check_name(mk_rec_name(ind_type.get_name()));
             check_no_metavar_no_fvar(m_env, ind_type.get_name(), type);
             tc().check(type, m_lparams);
@@ -256,7 +257,7 @@ public:
             } else if (!is_equivalent(sort_level(type), m_result_level)) {
                 throw kernel_exception(m_env, "mutually inductive types must live in the same universe");
             }
-
+            declare_inductive_type(idx);
             m_ind_cnsts.push_back(mk_constant(ind_type.get_name(), m_levels));
             first = false;
         }
@@ -320,21 +321,18 @@ public:
     }
 
     /** \brief Add all datatype declarations to environment. */
-    void declare_inductive_types() {
+    void declare_inductive_type(unsigned idx) {
         bool rec       = is_rec();
         bool reflexive = is_reflexive();
         names all = get_all_inductive_names();
-        for (unsigned idx = 0; idx < m_ind_types.size(); idx++) {
-            inductive_type const & ind_type = m_ind_types[idx];
-            name const & n = ind_type.get_name();
-            buffer<name> cnstr_names;
-            for (constructor const & cnstr : ind_type.get_cnstrs()) {
-                cnstr_names.push_back(constructor_name(cnstr));
-            }
-            m_env.check_name(n);
-            m_env.add_core(constant_info(inductive_val(n, m_lparams, ind_type.get_type(), m_nparams, m_nindices[idx],
-                                                       all, names(cnstr_names), m_nnested, rec, m_is_unsafe, reflexive)));
+        inductive_type const & ind_type = m_ind_types[idx];
+        name const & n = ind_type.get_name();
+        buffer<name> cnstr_names;
+        for (constructor const & cnstr : ind_type.get_cnstrs()) {
+            cnstr_names.push_back(constructor_name(cnstr));
         }
+        m_env.add_core(constant_info(inductive_val(n, m_lparams, ind_type.get_type(), m_nparams, m_nindices[idx],
+                                                   all, names(cnstr_names), m_nnested, rec, m_is_unsafe, reflexive)));
     }
 
     /** \brief Return true iff `t` is a term of the form `I As t`
@@ -416,7 +414,7 @@ public:
 
     /** \brief Check whether the constructor declarations are type correct, parameters are in the expected positions,
         constructor fields are in acceptable universe levels, positivity constraints, and returns the expected result. */
-    void check_constructors() {
+    void check_and_declare_constructors() {
         for (unsigned idx = 0; idx < m_ind_types.size(); idx++) {
             inductive_type const & ind_type = m_ind_types[idx];
             name_set found_cnstrs;
@@ -456,28 +454,26 @@ public:
                 if (!is_valid_ind_app(t, idx))
                     throw kernel_exception(m_env, sstream() << "invalid return type for '" << n << "'");
             }
+            declare_constructors(idx);
         }
     }
 
-    void declare_constructors() {
-        for (unsigned idx = 0; idx < m_ind_types.size(); idx++) {
-            inductive_type const & ind_type = m_ind_types[idx];
-            unsigned cidx = 0;
-            for (constructor const & cnstr : ind_type.get_cnstrs()) {
-                name const & n = constructor_name(cnstr);
-                expr const & t = constructor_type(cnstr);
-                unsigned arity = 0;
-                expr it = t;
-                while (is_pi(it)) {
-                    it = binding_body(it);
-                    arity++;
-                }
-                lean_assert(arity >= m_nparams);
-                unsigned nfields = arity - m_nparams;
-                m_env.check_name(n);
-                m_env.add_core(constant_info(constructor_val(n, m_lparams, t, ind_type.get_name(), cidx, m_nparams, nfields, m_is_unsafe)));
-                cidx++;
+    void declare_constructors(unsigned idx) {
+        inductive_type const & ind_type = m_ind_types[idx];
+        unsigned cidx = 0;
+        for (constructor const & cnstr : ind_type.get_cnstrs()) {
+            name const & n = constructor_name(cnstr);
+            expr const & t = constructor_type(cnstr);
+            unsigned arity = 0;
+            expr it = t;
+            while (is_pi(it)) {
+                it = binding_body(it);
+                arity++;
             }
+            lean_assert(arity >= m_nparams);
+            unsigned nfields = arity - m_nparams;
+            m_env.add_core(constant_info(constructor_val(n, m_lparams, t, ind_type.get_name(), cidx, m_nparams, nfields, m_is_unsafe)));
+            cidx++;
         }
     }
 
@@ -878,12 +874,8 @@ public:
 
     environment operator()() {
         m_env.check_duplicated_univ_params(m_lparams);
-        // TODO do check_name in  `declare_inductive_types` and `declare_constructors` instead of 
-        // in `check_inductive_types` and `check_constructors`
-        declare_inductive_types();
-        check_inductive_types();
-        declare_constructors();
-        check_constructors();
+        check_and_declare_inductive_types();
+        check_and_declare_constructors();
         init_elim_level();
         init_K_target();
         mk_rec_infos();

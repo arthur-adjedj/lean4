@@ -257,9 +257,9 @@ public:
             } else if (!is_equivalent(sort_level(type), m_result_level)) {
                 throw kernel_exception(m_env, "mutually inductive types must live in the same universe");
             }
-            declare_inductive_type(idx);
             m_ind_cnsts.push_back(mk_constant(ind_type.get_name(), m_levels));
             first = false;
+            declare_inductive_type(idx);
         }
 
         lean_assert(length(m_levels) == length(m_lparams));
@@ -611,7 +611,7 @@ public:
                         expr rec_arg  = *m_minor_names.find(f_name);
                         rec_arg = mk_app(rec_arg, args);
                         for (unsigned i_arg = 0; i < args.size();i++) {
-                            expr arg = args[i];
+                            expr arg = args[i_arg];
                             expr arg_ty = whnf(infer_type(arg));
                             if (is_rec_argument(arg_ty) && is_fvar(arg)) {
                                 for (unsigned j = 0; j <= i; j++) {
@@ -706,7 +706,7 @@ public:
                     i++;
                 }
                 buffer<expr> it_indices;
-                unsigned it_idx = get_I_indices(t, it_indices);                
+                get_I_indices(t, it_indices);                
                 /* populate v using u */
                 for (unsigned i = 0; i < u.size(); i++) {
                     expr u_i    = u[i];
@@ -823,7 +823,6 @@ public:
             expr index_ty = whnf(infer_type(index));
             auto j_idx = is_valid_ind_app(index_ty);
             if (j_idx) {
-                rec_info const & j_info = m_rec_infos[*j_idx];
                 expr motive = mk_const(mk_rec_name(m_ind_types[*j_idx].get_name()),get_rec_levels());
                 motive = mk_app(motive,m_params);
                 motive = mk_app(motive,Cs);
@@ -860,7 +859,6 @@ public:
         names all          = get_all_inductive_names();
         unsigned minor_idx = 0;
         for (unsigned d_idx = 0; d_idx < m_ind_types.size(); d_idx++) {
-            rec_info const & info = m_rec_infos[d_idx];
             expr rec_ty           = mk_final_motive(d_idx, Cs, minors);
             recursor_rules rules  = mk_rec_rules(d_idx, Cs, minors, minor_idx);
             name rec_name         = mk_rec_name(m_ind_types[d_idx].get_name());

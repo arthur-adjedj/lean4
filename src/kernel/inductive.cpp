@@ -277,8 +277,8 @@ public:
                 while (is_pi(t)) {
                     if (find(binding_domain(t), [&](expr const & e, unsigned) {
                                 if (is_constant(e)) {
-                                    for (expr const & I : m_ind_cnsts)
-                                        if (const_name(I) == const_name(e))
+                                    for (inductive_type I : m_ind_types)
+                                        if (I.get_name() == const_name(e))
                                             return true;
                                 }
                                 return false;

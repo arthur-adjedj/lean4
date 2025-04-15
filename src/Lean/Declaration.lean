@@ -165,13 +165,13 @@ def mkOpaqueValEx (name : Name) (levelParams : List Name) (type : Expr) (value :
 structure Constructor where
   name : Name
   type : Expr
-  deriving Inhabited, BEq
+  deriving Inhabited, BEq, Repr
 
 structure InductiveType where
   name : Name
   type : Expr
   ctors : List Constructor
-  deriving Inhabited, BEq
+  deriving Inhabited, BEq, Repr
 
 /-- Declaration object that can be sent to the kernel. -/
 inductive Declaration where

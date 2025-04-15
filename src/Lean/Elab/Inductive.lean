@@ -63,6 +63,7 @@ private def inductiveSyntaxToView (modifiers : Modifiers) (decl : Syntax) : Term
       throwError "Constructor cannot be `protected` because it is in a `private` inductive datatype"
     checkValidCtorModifier ctorModifiers
     let ctorName := ctor.getIdAt 3
+    let shortCtorName := name ++ ctorName
     let ctorName := declName ++ ctorName
     let ctorName ← withRef ctor[3] <| applyVisibility ctorModifiers ctorName
     let (binders, type?) := expandOptDeclSig ctor[4]

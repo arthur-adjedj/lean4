@@ -42,17 +42,18 @@ def indind : Declaration :=
   }
   .inductDecl [] 0 [con,ty] false
 
-/-
-mutual
-inductive Con : Type where
-  | nil : Con
-  | ext (Γ : Con) (A : Ty Γ): Con
+-- set_option autoImplicit false
+-- set_option trace.Elab.inductive true
+-- mutual
+-- inductive Con : Type where
+  -- | nil : Con
+  -- | ext (Γ : Con) (A : Ty Γ): Con
 
-inductive Ty : Con → Type where
-  | U (Γ : Con): Ty Γ
-  | Pi (Γ : Con) (A : Ty Con) (B : Ty (.ext Γ A)): Ty Γ
-end
--/
+-- inductive Ty : Con → Type where
+  -- | U (Γ : Con): Ty Γ
+  -- | Pi (Γ : Con) (A : Ty Γ) (B : Ty (Con.ext Γ A)): Ty Γ
+-- end
+-- #check Ty.rec
 
 run_cmd Command.liftTermElabM do
     addDecl indind
@@ -71,22 +72,22 @@ info: Ty.rec.{u} {motive_1 : Con → Sort u} {motive_2 : (Γ : Con) → motive_1
 #guard_msgs in
 #check Ty.rec
 
-run_cmd Command.liftTermElabM do
-  let recInfo ← getConstInfoRec ``Ty.rec
-  for rule in recInfo.rules do
-    logInfo m!"{rule.ctor} : {indentExpr rule.rhs}"
-
-run_cmd Command.liftTermElabM do
-  let recInfo ← getConstInfoRec ``Ty.rec
-  check recInfo.type
-  for rule in recInfo.rules do
-    check rule.rhs
-
-#check
-   @Ty.rec.{1}
-    (fun Γ => ∀ Γ A, Ty (Γ.ext A))
-    (fun Γ _ _ => ∀ A, Ty (Γ.ext A))
-    (fun A => .U _)
-    (fun Γ A Γ_ih A_ih B => sorryAx.{1} _ _)
-    (fun Γ Γ_ih A => Γ.ext A)
-    (sorryAx.{1} _ _)
+-- run_cmd Command.liftTermElabM do
+  -- let recInfo ← getConstInfoRec ``Ty.rec
+  -- for rule in recInfo.rules do
+    -- logInfo m!"{rule.ctor} : {indentExpr rule.rhs}"
+--
+-- run_cmd Command.liftTermElabM do
+  -- let recInfo ← getConstInfoRec ``Ty.rec
+  -- check recInfo.type
+  -- for rule in recInfo.rules do
+    -- check rule.rhs
+--
+-- #check
+  --  @Ty.rec.{1}
+    -- (fun Γ => ∀ Γ A, Ty (Γ.ext A))
+    -- (fun Γ _ _ => ∀ A, Ty (Γ.ext A))
+    -- (fun A => .U _)
+    -- (fun Γ A Γ_ih A_ih B => sorryAx.{1} _ _)
+    -- (fun Γ Γ_ih A => Γ.ext A)
+    -- (sorryAx.{1} _ _)

@@ -231,19 +231,19 @@ def structCtor := leading_parser
 ```
 and `structStx[4]` is `optional (" where " >> optional structCtor >> structFields)`.
 -/
-private def expandCtor (structStx : Syntax) (structModifiers : Modifiers) (structDeclName : Name)
-    (forcePrivate : Bool) : TermElabM CtorView := do
+private def expandCtor (structStx : Syntax) (structModifiers : Modifiers) (shortStructDeclName structDeclName : Name) : TermElabM CtorView := do
   let useDefault := do
     let visibility := if forcePrivate then .private else .regular
     let modifiers := { (default : Modifiers) with visibility }
     let declName := structDeclName ++ defaultCtorName
     let declName ← applyVisibility modifiers declName
+    let shortDeclName := shortStructDeclName ++ defaultCtorName
     let ref := structStx[1].mkSynthetic
     addDeclarationRangesFromSyntax declName ref
     if structModifiers.isMeta then
       modifyEnv (addMeta · declName)
-    pure { ref, declId := ref, modifiers, declName }
-  if structStx[4].isNone then
+    pure { ref, declId := ref, modifiers, declName, shortDeclName }
+  if structStx[5].isNone then
     useDefault
   else
     let optCtor := structStx[4][1]
@@ -279,12 +279,13 @@ private def expandCtor (structStx : Syntax) (structModifiers : Modifiers) (struc
       let name := ctor[1].getId
       let declName := structDeclName ++ name
       let declName ← applyVisibility ctorModifiers declName
+      let shortDeclName := shortStructDeclName ++ name
       -- `binders` is type parameter binder overrides; this will be validated when the constructor is created in `Structure.mkCtor`.
       let binders := ctor[2]
       addDeclarationRangesFromSyntax declName ctor[1]
       if structModifiers.isMeta then
         modifyEnv (addMeta · declName)
-      pure { ref := ctor[1], declId := ctor[1], modifiers := ctorModifiers, declName, binders }
+      pure { ref := ctor[1], declId := ctor[1], modifiers := ctorModifiers, declName, shortDeclName, binders }
 
 /--
 ```
@@ -437,6 +438,8 @@ def structureSyntaxToView (modifiers : Modifiers) (stx : Syntax) : TermElabM Str
       pure type?
   let parents ← expandParents exts
   let derivingClasses ← getOptDerivingClasses stx[5]
+  let type?     := if optType.isNone then none else some optType[0][1]
+  let ctor ← expandCtor stx modifiers name declName
   let fields ← expandFields stx modifiers declName
   -- Private fields imply a private constructor (in the module system only, for back-compat)
   let ctor ← expandCtor

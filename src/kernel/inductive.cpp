@@ -373,8 +373,8 @@ public:
     bool is_ind_occ(expr const & e) {
         return
             is_constant(e) &&
-            std::any_of(m_ind_cnsts.begin(), m_ind_cnsts.end(),
-                        [&](expr const & c) { return const_name(e) == const_name(c); });
+            std::any_of(m_ind_types.begin(), m_ind_types.end(),
+                        [&](inductive_type i) { return const_name(e) == i.get_name(); });
     }
 
     /** \brief Return true iff `t` does not contain any occurrence of a datatype being declared. */

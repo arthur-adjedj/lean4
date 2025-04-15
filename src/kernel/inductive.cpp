@@ -668,6 +668,16 @@ public:
                     expr C_app  = mk_app(m_rec_infos[it_idx].m_C, it_indices);
                     expr u_app  = mk_app(index, xs);
                     C_app = mk_app(C_app, u_app);
+                    /* TODO use mk_motive_arg here as well, motives can also be dependant in other motives
+                    eg: in 
+                    mutual
+                        inductive Con : Type where                                    
+                        inductive Ty : (Γ : Con) → Type where                                    
+                        inductive Tm : (Γ : Con) → (A : Ty Γ) → Type where
+                    end
+                    the motive for Tm must be of the form 
+                        `(Γ : Con) → (Γ_ih : motive_1 Γ) → (A : Ty Γ) → motive_2 Γ Γ_ih A → Tm Γ A → Sort u`
+                    */
                     expr v_i_ty = mk_pi(xs, C_app);
                     local_decl u_i_decl = m_lctx.get_local_decl(fvar_name(index));
                     expr v_i    = mk_local_decl(u_i_decl.get_user_name().append_after("_ih"), v_i_ty, binder_info());

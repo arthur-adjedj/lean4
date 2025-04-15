@@ -610,11 +610,11 @@ public:
                         name f_name = const_name(f);
                         expr rec_arg  = *m_minor_names.find(f_name);
                         rec_arg = mk_app(rec_arg, args);
-                        for (unsigned i_arg = 0; i < args.size();i++) {
+                        for (unsigned i_arg = 0; i_arg < args.size();i_arg++) {
                             expr arg = args[i_arg];
                             expr arg_ty = whnf(infer_type(arg));
                             if (is_rec_argument(arg_ty) && is_fvar(arg)) {
-                                for (unsigned j = 0; j <= i; j++) {
+                                for (unsigned j = 0; j <= i_arg; j++) {
                                     if (arg == u[j]) {
                                         expr v_j = v[j];
                                         rec_arg = mk_app(rec_arg, v_j);

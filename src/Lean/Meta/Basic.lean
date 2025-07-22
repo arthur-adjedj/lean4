@@ -787,6 +787,7 @@ def e3 : Expr := .app (.const ``Nat.zero []) (.const ``Nat.zero [])
 
 See `Lean.Meta.inferTypeImp` for the implementation of `inferType`.
 -/
+@[extern 6 "lean_rewrite"] opaque rewrite? : Expr → MetaM (Option Expr)
 @[extern 6 "lean_infer_type"] opaque inferType : Expr → MetaM Expr
 @[extern 7 "lean_is_expr_def_eq"] opaque isExprDefEqAux : Expr → Expr → MetaM Bool
 @[extern 7 "lean_is_level_def_eq"] opaque isLevelDefEqAux : Level → Level → MetaM Bool

@@ -94,5 +94,6 @@ Discrimination trees. It is an index from terms to values of type `α`.
 -/
 structure DiscrTree (α : Type) where
   root : PersistentHashMap Key (Trie α) := {}
+deriving Nonempty
 
 end Lean.Meta

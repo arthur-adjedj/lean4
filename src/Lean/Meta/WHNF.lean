@@ -621,8 +621,10 @@ partial def consumeUnusedLet (e : Expr) (consumeNondep : Bool := false) : Expr :
 Apply beta-reduction, zeta-reduction (i.e., unfold let local-decls), iota-reduction,
 expand let-expressions, expand assigned meta-variables.
 -/
-partial def whnfCore (e : Expr) : MetaM Expr :=
-  go e
+partial def whnfCore (e : Expr) : MetaM Expr := do
+  let e' ← go e
+  let some e'' ← rewrite? e' | return e'
+  return e''
 where
   go (e : Expr) : MetaM Expr :=
     whnfEasyCases e fun e => do

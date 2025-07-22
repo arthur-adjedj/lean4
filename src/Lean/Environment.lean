@@ -22,6 +22,9 @@ import Lean.Util.FoldConsts
 import Lean.PrivateName
 import Lean.LoadDynlib
 import Init.Dynamic
+import Lean.Meta.DiscrTreeTypes
+
+open Lean.Meta (DiscrTree)
 
 /-!
 # Note [Environment Branches]
@@ -197,6 +200,8 @@ structure Diagnostics where
   enabled : Bool := false
   deriving Inhabited
 
+abbrev RewriteRuleTree := Std.HashMap Name (Array Name)
+
 /--
 An environment stores declarations provided by the user. The kernel
 currently supports different kinds of declarations such as definitions, theorems,
@@ -266,6 +271,7 @@ structure Environment where
   private extraConstNames : NameSet
   /-- The header contains additional information that is set at import time. -/
   header                  : EnvironmentHeader := {}
+  rewriteRulesTree        : RewriteRuleTree
 deriving Nonempty
 
 /-- Exceptions that can be raised by the kernel when type checking new declarations. -/
@@ -322,6 +328,15 @@ opaque addDeclWithoutChecking (env : Environment) (decl : @& Declaration) : Exce
 @[export lean_environment_add]
 private def add (env : Environment) (cinfo : ConstantInfo) : Environment :=
   { env with constants := env.constants.insert cinfo.name cinfo }
+
+-- /- Let's forward-declare the function for now, define it in Meta,
+  --  and once it works see if the forward-decl is needed in the first place.
+-- -/
+-- @[extern "lean_environment_add_rewrite_rule"]
+-- private opaque addRewriteRuleEx (env : Environment) (declName : Name) : Environment
+
+def addRewriteRule (env : Environment) (f : RewriteRuleTree → RewriteRuleTree) : Environment :=
+{ env with rewriteRulesTree := f env.rewriteRulesTree}
 
 @[export lean_kernel_diag_is_enabled]
 def Diagnostics.isEnabled (d : Diagnostics) : Bool :=
@@ -654,6 +669,9 @@ private def modifyCheckedAsync (env : Environment) (f : Kernel.Environment → K
 /-- Sets synchronous and (private) asynchronous parts of the environment to the given kernel environment. -/
 private def setCheckedSync (env : Environment) (newChecked : Kernel.Environment) : Environment :=
   { env with checked := .pure newChecked, base.private := newChecked }
+
+def addRewriteRule (env : Environment) (f : Kernel.RewriteRuleTree → Kernel.RewriteRuleTree) : Environment :=
+  modifyCheckedAsync env (Kernel.Environment.addRewriteRule · f)
 
 /-- The declaration prefix to which the environment is restricted to, if any. -/
 def asyncPrefix? (env : Environment) : Option Name :=
@@ -1476,6 +1494,7 @@ def mkEmptyEnvironment (trustLevel : UInt32 := 0) : IO Environment := do
       extraConstNames := {}
       extensions      := exts
       irBaseExts      := exts
+      rewriteRulesTree := {}
     }
     realizedImportedConsts? := none
   }
@@ -2123,6 +2142,8 @@ def finalizeImport (s : ImportState) (imports : Array Import) (opts : Options) (
       modules      := modules.map (·.toEffectiveImport)
       regions      := modules.flatMap (·.parts.map (·.2))
     }
+    -- TODO transport rewrite rules through imports
+    rewriteRulesTree := {}
   }
   let publicConstants : ConstMap := SMap.fromHashMap publicConstantMap false
   let publicBase := { privateBase with constants := publicConstants, header.regions := #[] }

@@ -55,3 +55,4 @@ import Lean.Meta.Diagnostics
 import Lean.Meta.BinderNameHint
 import Lean.Meta.TryThis
 import Lean.Meta.Hint
+import Lean.Meta.RewriteRule

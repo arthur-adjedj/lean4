@@ -11,7 +11,12 @@ namespace Lean.Meta
 def alterRewriteRule (head declName : Name) (tree : Kernel.RewriteRuleTree): Kernel.RewriteRuleTree :=
   tree.alter head (fun | none => #[declName] | some arr => arr.push declName)
 
--- TODO check/add rewrite rule
+/-- If the head is not a constant, we simply index the tree by `Name.anonymous`, which should never appear in real terms
+    TODO use better discrimination techniques to be more accurate/try less rewrite rules ?
+-/
+def rewriteRuleTreeKeyOf (e : Expr) : Name :=
+  e.getAppFn.constName?.getD Name.anonymous
+
 -- @[export lean_environment_add_rewrite_rule]
 -- def addRewriteRule (env : Environment) (_const : Name) : Environment := env
 -- (no need to check that both lhs and rhs are neutrals, worst case scenario, the rule will never trigger)
@@ -23,16 +28,17 @@ def addAndCheckRewriteRule (declName : Name) : MetaM Unit := do
     let type ← instantiateTypeLevelParams cinfo.toConstantVal us
     let (xs,_bids,type) ← forallMetaTelescope type
     match type.eq? with
-    | none => throwError m!"Error when trying to add new rewrite rule \\
+    | none => throwError m!"Error when trying to add new rewrite rule \
         The inferred type {indentExpr type} of {declName} should be of the form `(A₁ : A₁) → ... → (aₙ : Aₙ) → x = y`"
     | some (_,lhs,rhs) =>
         let lhs_mvars := Expr.collectMVars {} lhs
         unless (xs.all (lhs_mvars.result.contains ·.mvarId!)) do
-          throwError "Cannot add {declName} as a rewrite rule: \\ Some variables introduced do not appear in the left-hand-side of the equality."
+          throwError "Cannot add {declName} as a rewrite rule: \
+           Some variables introduced do not appear in the left-hand-side of the equality."
         unless !(← Meta.isDefEq lhs rhs) do
-          throwError m!"Cannot add {declName} as a rewrite rule: \\ The two sides of the equality are already definitionally equal."
-        -- let lhs ← whnf lhs
-        let headName := lhs.getAppFn.constName?.getD Name.anonymous
+          throwError m!"Cannot add {declName} as a rewrite rule: \
+           The two sides of the equality are already definitionally equal."
+        let headName := rewriteRuleTreeKeyOf lhs
         trace[Meta.IsDefEq.RewriteRule.add] "Adding {declName} indexed by {headName}"
         modifyEnv (·.addRewriteRule (alterRewriteRule headName declName))
         resetCache
@@ -63,8 +69,7 @@ where
   go (e lhs : Expr) (addedFVars : Array Expr) (map : Std.HashMap Expr Expr) : MetaM (Option (Std.HashMap Expr Expr)) := do
     withTraceNode `Meta.IsDefEq.RewriteRule
       (return m!"{exceptBoolEmoji <| ·.map Option.isSome} go {e} ≟ {lhs} ({addedFVars} {map.toArray})") do
-    -- TODO manage projections, ensure mdata is stripped
-    match e , lhs with
+    match e.consumeMData , lhs.consumeMData with
       | .sort u, .sort v =>
         unless (← isLevelDefEq u v) do return none
         return map
@@ -73,7 +78,6 @@ where
         return map
       | _,.fvar _ =>
         if (addedFVars.contains lhs) then
-          trace[Meta.IsDefEq.RewriteRule] "lhs is in addedFVars"
           if (e == lhs) then
             return map
           else
@@ -81,14 +85,11 @@ where
         match map[lhs]? with
           | none =>
             let map := map.insert lhs e
-            trace[Meta.IsDefEq.RewriteRule] "mapping fvar {lhs} to {e} : {map.toArray}"
             return map
           | some y =>
-            -- TODO use DefEq here ?
-            unless (e == y) do
-              trace[Meta.IsDefEq.RewriteRule] "Failure, fvar {lhs} needs to be mapped to both {e} and {y}"
+            -- TODO only use syntactic equality here ?
+            unless (← isDefEq e y) do
               return none
-            trace[Meta.IsDefEq.RewriteRule] "{lhs} is already in the map"
             return map
       | .forallE ne de be bi, .forallE _ dlhs blhs _  =>
         let some map ← matchAgainstPattern (← whnf de) (← whnf dlhs) addedFVars map | return none
@@ -102,6 +103,10 @@ where
         unless le == llhs do
           return none
         return map
+      | .proj ne ie structe, .proj nlhs ilhs structlhs =>
+          unless ne == nlhs && ie == ilhs do
+            return none
+          matchAgainstPattern (← whnf structe) (← whnf structlhs) addedFVars map
       | _,_ =>
         trace[Meta.IsDefEq.RewriteRule] "matching failure : {e} ≟ {lhs}"
         return none
@@ -111,9 +116,9 @@ def rewrite?Impl (e : Expr) : MetaM (Option Expr) :=
   withIncRecDepth do
   withTraceNode `Meta.IsDefEq.RewriteRule
     (return m!"{exceptBoolEmoji <| ·.map Option.isSome} Trying to rewrite {indentExpr e}") do
-  let head := e.getAppFn.constName?.getD Name.anonymous
-  trace[Meta.IsDefEq.RewriteRule] "Head : {head}"
-  let some candidates := (← getEnv).toKernelEnv.rewriteRulesTree[head]? | return none
+  let headName := rewriteRuleTreeKeyOf e
+  trace[Meta.IsDefEq.RewriteRule] "Head : {headName}"
+  let some candidates := (← getEnv).toKernelEnv.rewriteRulesTree[headName]? | return none
   trace[Meta.IsDefEq.RewriteRule] "Candidates : {candidates}"
   for candidate in candidates do
     let cinfo ← getConstInfo candidate
@@ -139,7 +144,6 @@ builtin_initialize
       Attribute.Builtin.ensureNoArgs stx
       discard <| addAndCheckRewriteRule declName |>.run
   }
-
 
   registerTraceClass `Meta.IsDefEq.RewriteRule
   registerTraceClass `Meta.IsDefEq.RewriteRule.add

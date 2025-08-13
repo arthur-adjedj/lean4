@@ -588,45 +588,45 @@ public:
     }
 
     expr mk_motive_arg(const expr u_i_ty, buffer<expr> const & u, buffer<expr> & v) {
-            buffer<expr> it_indices;
-            unsigned it_idx = get_I_indices(u_i_ty, it_indices);
-            expr C_app  = m_rec_infos[it_idx].m_C;
-            for (unsigned i = 0; i < it_indices.size(); i++) {
-                expr index = it_indices[i];
-                C_app = mk_app(C_app, index);
-                expr index_ty = whnf(infer_type(index));
-                if (is_rec_argument(index_ty)) {
-                    if (is_fvar(index)) {
-                        for (unsigned j = 0; j <= i; j++) {
-                            if (index == u[j]) {
+        buffer<expr> it_indices;
+        buffer<expr> motive_proofs;
+        unsigned it_idx = get_I_indices(u_i_ty, it_indices);
+        expr C_app  = m_rec_infos[it_idx].m_C;
+        C_app = mk_app(C_app, it_indices);
+        for (unsigned i = 0; i < it_indices.size(); i++) {
+            expr index = it_indices[i];
+            expr index_ty = whnf(infer_type(index));
+            if (is_rec_argument(index_ty) && is_fvar(index)) {
+                for (unsigned j = 0; j <= i; j++) {
+                    if (index == u[j]) {
+                        expr v_j = v[j];
+                        motive_proofs.push_back(v_j);
+                        break;
+                    }
+                }
+            } else if (is_rec_argument(index_ty)) {
+                buffer<expr> args;
+                expr f = get_app_args(index, args);
+                name f_name = const_name(f);
+                expr rec_arg  = *m_minor_names.find(f_name);
+                rec_arg = mk_app(rec_arg, args);
+                for (unsigned i_arg = 0; i_arg < args.size();i_arg++) {
+                    expr arg = args[i_arg];
+                    expr arg_ty = whnf(infer_type(arg));
+                    if (is_rec_argument(arg_ty) && is_fvar(arg)) {
+                        for (unsigned j = 0; j <= i_arg; j++) {
+                            if (arg == u[j]) {
                                 expr v_j = v[j];
-                                C_app = mk_app(C_app, v_j);
+                                rec_arg = mk_app(rec_arg, v_j);
                                 break;
                             }
                         }
-                    } else {
-                        buffer<expr> args;
-                        expr f = get_app_args(index, args);
-                        name f_name = const_name(f);
-                        expr rec_arg  = *m_minor_names.find(f_name);
-                        rec_arg = mk_app(rec_arg, args);
-                        for (unsigned i_arg = 0; i_arg < args.size();i_arg++) {
-                            expr arg = args[i_arg];
-                            expr arg_ty = whnf(infer_type(arg));
-                            if (is_rec_argument(arg_ty) && is_fvar(arg)) {
-                                for (unsigned j = 0; j <= i_arg; j++) {
-                                    if (arg == u[j]) {
-                                        expr v_j = v[j];
-                                        rec_arg = mk_app(rec_arg, v_j);
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        C_app   = mk_app(C_app, rec_arg);
-                    } 
+                    }
                 }
+                motive_proofs.push_back(rec_arg);
             }
+        }
+        C_app = mk_app(C_app,motive_proofs);
         return C_app;
     }
 
@@ -653,38 +653,45 @@ public:
             info.m_major = mk_local_decl("t", mk_app(mk_app(m_ind_cnsts[d_idx], m_params), info.m_indices));
             expr C_ty = mk_sort(m_elim_level);
             C_ty      = mk_pi(info.m_major, C_ty);
+            buffer<expr> b_u; // nonrec and rec args;
+            buffer<expr> u;   // rec args
+            buffer<expr> v;   // motive args
             for (unsigned i = 0; i < info.m_indices.size(); i++) {
-                expr index = info.m_indices[info.m_indices.size()-i-1];
+                expr index = info.m_indices[i];
                 expr index_ty = whnf(infer_type(index));
                 if (is_rec_argument(index_ty)) {
-                    buffer<expr> xs;
-                    while (is_pi(index_ty)) {
-                        expr x = mk_local_decl_for(index_ty);
-                        xs.push_back(x);
-                        index_ty = whnf(instantiate(binding_body(index_ty), x));
+                    u.push_back(index);
+                    auto is_valid = is_valid_ind_app(index_ty);
+                    if (!is_valid) {
+                        throw kernel_exception(m_env, "large inductive-inductive types are not accepted");
                     }
+                    /*TODO refactor to use mk_motive_arg instead, this code is very similar to that function*/
                     buffer<expr> it_indices;
                     unsigned it_idx = get_I_indices(index_ty, it_indices);
-                    expr C_app  = mk_app(m_rec_infos[it_idx].m_C, it_indices);
-                    expr u_app  = mk_app(index, xs);
-                    C_app = mk_app(C_app, u_app);
-                    /* TODO use mk_motive_arg here as well, motives can also be dependant in other motives
-                    eg: in 
-                    mutual
-                        inductive Con : Type where                                    
-                        inductive Ty : (Γ : Con) → Type where                                    
-                        inductive Tm : (Γ : Con) → (A : Ty Γ) → Type where
-                    end
-                    the motive for Tm must be of the form 
-                        `(Γ : Con) → (Γ_ih : motive_1 Γ) → (A : Ty Γ) → motive_2 Γ Γ_ih A → Tm Γ A → Sort u`
-                    */
-                    expr v_i_ty = mk_pi(xs, C_app);
+                    expr C_app  = m_rec_infos[it_idx].m_C;
+                    C_app = mk_app(C_app, it_indices);
+                    for (unsigned i = 0; i < it_indices.size(); i++) {
+                        expr index = it_indices[i];
+                        expr index_ty = whnf(infer_type(index));
+                        if (is_rec_argument(index_ty) && is_fvar(index)) {
+                            for (unsigned j = 0; j <= i; j++) {
+                                if (index == u[j]) {
+                                    expr v_j = v[j];
+                                    C_app = mk_app(C_app,v_j);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    C_app = mk_app(C_app, index);
                     local_decl u_i_decl = m_lctx.get_local_decl(fvar_name(index));
-                    expr v_i    = mk_local_decl(u_i_decl.get_user_name().append_after("_ih"), v_i_ty, binder_info());
-                    C_ty = mk_pi(v_i,  C_ty);
+                    expr v_i    = mk_local_decl(u_i_decl.get_user_name().append_after("_ih"), C_app, binder_info());
+                    v.push_back(v_i);
                 };
-                C_ty = mk_pi(index,  C_ty);
+                b_u.push_back(index);
             }
+            C_ty = mk_pi(v,  C_ty);
+            C_ty = mk_pi(u,  C_ty);
             name C_name("motive");
             if (m_ind_types.size() > 1)
                 C_name = name(C_name).append_after(d_idx+1);
@@ -742,7 +749,6 @@ public:
                 name minor_name = cnstr_name.replace_prefix(ind_type_name, name());
                 expr minor      = mk_local_decl(minor_name, minor_ty);
                 m_rec_infos[d_idx].m_minors.push_back(minor);
-                // std::cout << "Mapping " << d_idx << " "<< cnstr_name << " to " << minor << "\n\n";
                 m_minor_names.insert(cnstr_name, minor);
             }
             d_idx++;
@@ -827,25 +833,19 @@ public:
     expr mk_final_motive(unsigned d_idx, buffer<expr> Cs, buffer<expr> minors) {
         rec_info const & info = m_rec_infos[d_idx];
         expr rec_ty  = info.m_C;
+        rec_ty = mk_app(rec_ty, info.m_indices);
         for (unsigned i = 0; i < info.m_indices.size(); i++) {
             expr index = info.m_indices[i];
-            rec_ty = mk_app(rec_ty, index);
             expr index_ty = whnf(infer_type(index));
             auto j_idx = is_valid_ind_app(index_ty);
             if (j_idx) {
+                buffer<expr> indices;
+                get_I_indices(index_ty,indices);
                 expr motive = mk_const(mk_rec_name(m_ind_types[*j_idx].get_name()),get_rec_levels());
                 motive = mk_app(motive,m_params);
                 motive = mk_app(motive,Cs);
                 motive = mk_app(motive,minors);
-                /* this works only for very simple inductive-inductive types, eg when two types are defined mutually but the first one is not indexed by anything
-                   A more complete example would need to handle:
-                   - inductive-inductive where the former inductive is indexed (possibly by other inductives)
-                   - large induction-induction, e.g
-                    ```
-                        inductive Foo : Type where ...
-                        inductive Bar : (Nat -> Foo) -> Foo where ...
-                    ```
-                */
+                motive = mk_app(motive,indices);
                 motive = mk_app(motive,index);
                 rec_ty = mk_app(rec_ty,motive);
             }

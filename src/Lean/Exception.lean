@@ -187,6 +187,11 @@ instance [MonadRecDepth m] : MonadRecDepth (ReaderT ρ m) where
   getRecDepth      := fun _ => MonadRecDepth.getRecDepth
   getMaxRecDepth   := fun _ => MonadRecDepth.getMaxRecDepth
 
+instance [MonadRecDepth m] : MonadRecDepth (StateT ρ m) where
+  withRecDepth d x := fun ctx => MonadRecDepth.withRecDepth d (x ctx)
+  getRecDepth      := fun _ => MonadRecDepth.getRecDepth
+  getMaxRecDepth   := fun _ => MonadRecDepth.getMaxRecDepth
+
 instance [Monad m] [MonadRecDepth m] : MonadRecDepth (StateRefT' ω σ m) :=
   inferInstanceAs (MonadRecDepth (ReaderT _ _))
 

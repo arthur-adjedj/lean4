@@ -200,7 +200,12 @@ structure Diagnostics where
   enabled : Bool := false
   deriving Inhabited
 
-abbrev RewriteRuleTree := Std.HashMap Name (Array Name)
+structure RewriteCandidate where
+  declName : Name
+  expr : Expr
+deriving Repr, Nonempty
+
+abbrev RewriteRuleTree := Std.HashMap Name (Array RewriteCandidate)
 
 /--
 An environment stores declarations provided by the user. The kernel

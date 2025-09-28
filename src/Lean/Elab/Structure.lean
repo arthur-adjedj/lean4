@@ -231,7 +231,7 @@ def structCtor := leading_parser
 ```
 and `structStx[4]` is `optional (" where " >> optional structCtor >> structFields)`.
 -/
-private def expandCtor (structStx : Syntax) (structModifiers : Modifiers) (shortStructDeclName structDeclName : Name) : TermElabM CtorView := do
+private def expandCtor (structStx : Syntax) (structModifiers : Modifiers) (shortStructDeclName structDeclName : Name) (forcePrivate : Bool): TermElabM CtorView := do
   let useDefault := do
     let visibility := if forcePrivate then .private else .regular
     let modifiers := { (default : Modifiers) with visibility }
@@ -438,13 +438,11 @@ def structureSyntaxToView (modifiers : Modifiers) (stx : Syntax) : TermElabM Str
       pure type?
   let parents ← expandParents exts
   let derivingClasses ← getOptDerivingClasses stx[5]
-  let type?     := if optType.isNone then none else some optType[0][1]
-  let ctor ← expandCtor stx modifiers name declName
   let fields ← expandFields stx modifiers declName
   -- Private fields imply a private constructor (in the module system only, for back-compat)
   let ctor ← expandCtor
     (forcePrivate := (← getEnv).header.isModule && fields.any (·.modifiers.isPrivate))
-    stx modifiers declName
+    stx modifiers name declName
   fields.forM fun field => do
     if field.declName == ctor.declName then
       throwErrorAt field.ref "Invalid field name `{field.name}`: This is the name of the structure constructor"

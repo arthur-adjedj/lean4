@@ -70,7 +70,7 @@ private def inductiveSyntaxToView (modifiers : Modifiers) (decl : Syntax) : Term
     addDeclarationRangesFromSyntax ctorName ctor ctor[3]
     if modifiers.isMeta then
       modifyEnv (addMeta · ctorName)
-    return { ref := ctor, declId := ctor[3], modifiers := ctorModifiers, declName := ctorName, binders := binders, type? := type? : CtorView }
+    return { ref := ctor, declId := ctor[3], modifiers := ctorModifiers, declName := ctorName,shortDeclName := shortCtorName, binders := binders, type? := type? : CtorView }
   let computedFields ← (decl[5].getOptional?.map (·[1].getArgs) |>.getD #[]).mapM fun cf => withRef cf do
     return { ref := cf, modifiers := cf[0], fieldId := cf[1].getId, type := ⟨cf[3]⟩, matchAlts := ⟨cf[4]⟩ }
   let classes ← getOptDerivingClasses decl[6]

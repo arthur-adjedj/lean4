@@ -490,8 +490,8 @@ private def fixedIndicesToParams (numParams : Nat) (indTypes : Array InductiveTy
   let mask := masks[0]!
   forallBoundedTelescope indTypes[0]!.type numParams fun params type => do
     let otherTypes ← indTypes[1:].toArray.mapM fun indType => do whnfD (← instantiateForall indType.type params)
-    let headerTypes ← indTypes.toList.mapM fun indType => indType.ctors.mapM fun ctor => do whnfD (← instantiateForall ctor.type params)
-    let typesToCheck := otherTypes.toList ++ headerTypes.flatten
+    let ctorTypes ← indTypes.toList.mapM fun indType => indType.ctors.mapM fun ctor => do whnfD (← instantiateForall ctor.type params)
+    let typesToCheck := otherTypes.toList ++ ctorTypes.flatten
     let rec go (i : Nat) (type : Expr) (typesToCheck : List Expr) : MetaM Nat := do
       if i < mask.size then
         if !masks.all fun mask => i < mask.size && mask[i]! then
@@ -543,8 +543,8 @@ private def levelMVarToParam (indTypes : List InductiveType) (univToInfer? : Opt
   indTypes.mapM fun indType => do
     let type  ← levelMVarToParam' indType.type
     let ctors ← indType.ctors.mapM fun ctor => do
-      let headerType ← levelMVarToParam' ctor.type
-      return { ctor with type := headerType }
+      let ctorType ← levelMVarToParam' ctor.type
+      return { ctor with type := ctorType }
     return { indType with ctors, type }
 where
   levelMVarToParam' (type : Expr) : TermElabM Expr := do
@@ -840,8 +840,8 @@ private def updateParams (vars : Array Expr) (indTypes : List InductiveType) : T
   indTypes.mapM fun indType => do
     let type ← mkForallFVars vars indType.type
     let ctors ← indType.ctors.mapM fun ctor => do
-      let headerType ← withExplicitToImplicit vars (mkForallFVars vars ctor.type)
-      return { ctor with type := headerType }
+      let ctorType ← withExplicitToImplicit vars (mkForallFVars vars ctor.type)
+      return { ctor with type := ctorType }
     return { indType with type, ctors }
 
 private def collectLevelParamsInInductive (indTypes : List InductiveType) : Array Name := Id.run do
@@ -861,7 +861,7 @@ private def mkIndFVar2Const (views : Array InductiveView) (indFVars : Array Expr
     m := m.insert indFVar (mkConst view.declName levelParams)
   return m
 
-private def mkConstrFVar2Const (views : Array InductiveView)  (ctorFVars : Array (Array Expr)) (levelNames : List Name) : ExprMap Expr := Id.run do
+private def mkConstrFVar2Const (views : Array InductiveView) (ctorFVars : Array (Array Expr)) (levelNames : List Name) : ExprMap Expr := Id.run do
   let levelParams := levelNames.map mkLevelParam;
   let mut m : ExprMap Expr := {}
   for h : i in [:views.size] do
@@ -1033,11 +1033,9 @@ private def mkAuxConstructions (declNames : Array Name) : TermElabM Unit := do
     if hasUnit && hasEq && hasHEq then mkNoConfusion n
     if hasUnit && hasProd then
       mkBelow n
-      mkIBelow n
   if hasUnit && hasProd then
     for n in declNames do
       mkBRecOn n
-      mkBInductionOn n
 
 private def elabInductiveViews (vars : Array Expr) (elabs : Array InductiveElabStep1) : TermElabM FinalizeContext := do
   let view0 := elabs[0]!.view
@@ -1046,14 +1044,13 @@ private def elabInductiveViews (vars : Array Expr) (elabs : Array InductiveElabS
   withExporting (isExporting := !isPrivateName view0.declName) do
     let res ← mkInductiveDecl vars elabs
     -- This might be too coarse, consider reconsidering on construction-by-construction basis
-    /-TODO turn back on once fixed-/
-    -- withoutExporting (when := view0.ctors.any (isPrivateName ·.declName)) do
-    -- mkAuxConstructions (elabs.map (·.view.declName))
-    -- unless view0.isClass do
-      -- mkSizeOfInstances view0.declName
-      -- IndPredBelow.mkBelow view0.declName
-      -- for e in elabs do
-        -- mkInjectiveTheorems e.view.declName
+    withoutExporting (when := view0.ctors.any (isPrivateName ·.declName)) do
+    mkAuxConstructions (elabs.map (·.view.declName))
+    unless view0.isClass do
+      mkSizeOfInstances view0.declName
+      IndPredBelow.mkBelow view0.declName
+      for e in elabs do
+        mkInjectiveTheorems e.view.declName
     for e in elabs do
       enableRealizationsForConst e.view.declName
       for ctor in e.view.ctors do

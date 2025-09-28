@@ -653,7 +653,7 @@ public:
             info.m_major = mk_local_decl("t", mk_app(mk_app(m_ind_cnsts[d_idx], m_params), info.m_indices));
             expr C_ty = mk_sort(m_elim_level);
             C_ty      = mk_pi(info.m_major, C_ty);
-            buffer<expr> b_u; // nonrec and rec args;
+            buffer<expr> b_u; // nonrec args;
             buffer<expr> u;   // rec args
             buffer<expr> v;   // motive args
             for (unsigned i = 0; i < info.m_indices.size(); i++) {
@@ -687,11 +687,13 @@ public:
                     local_decl u_i_decl = m_lctx.get_local_decl(fvar_name(index));
                     expr v_i    = mk_local_decl(u_i_decl.get_user_name().append_after("_ih"), C_app, binder_info());
                     v.push_back(v_i);
-                };
-                b_u.push_back(index);
+                } else {;
+                    b_u.push_back(index);
+                }
             }
             C_ty = mk_pi(v,  C_ty);
             C_ty = mk_pi(u,  C_ty);
+            C_ty = mk_pi(b_u,  C_ty);
             name C_name("motive");
             if (m_ind_types.size() > 1)
                 C_name = name(C_name).append_after(d_idx+1);

@@ -251,7 +251,7 @@ def mkBRecOnConst (recArgInfos : Array RecArgInfo) (positions : Positions)
   -- Pick one as a prototype
   let brecOnAux := brecOnCons 0
   -- Infer the type of the packed motive arguments
-  let packedMotiveTypes ← inferArgumentTypesN indGroup.numMotives brecOnAux
+  let packedMotiveTypes ← inferArgumentTypesN! indGroup.numMotives brecOnAux
   let packedMotives ← positions.mapMwith PProdN.packLambdas packedMotiveTypes motives
 
   return fun n => mkAppN (brecOnCons n) packedMotives

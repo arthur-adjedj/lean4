@@ -268,7 +268,7 @@ def cases (mvarId : MVarId) (majorFVarId : FVarId) (givenNames : Array AltVarNam
       mvarId.checkNotAssigned `cases
       let context? ← mkCasesContext? majorFVarId
       match context? with
-      | none     => throwTacticEx `cases mvarId "not applicable to the given hypothesis"
+      | none     => throwTacticEx `cases mvarId m!"not applicable to the given hypothesis. Major fvar: {indentExpr (mkFVar majorFVarId)}"
       | some ctx =>
         /- Remark: if caller does not need a `FVarSubst` (variable substitution), and `hasIndepIndices ctx` is true,
            then we can also use the simple case. This is a minor optimization, and we currently do not even

@@ -99,8 +99,8 @@ private def elimMutualRecursion (preDefs : Array PreDefinition) (fixedParamPerms
       k #[] motives
   withFunTypesAndMotives fun funTypes motives => do
   trace[Elab.definition.structural] "funTypes: {funTypes}, motives: {motives}"
-
   let brecOnConst ← mkBRecOnConst recArgInfos positions motives isIndPred
+  trace[Elab.definition.structural] "brecOnConst done : {indentExpr (brecOnConst 0)} "
   let FTypes ← inferBRecOnFTypes recArgInfos positions brecOnConst
   trace[Elab.definition.structural] "FTypes: {FTypes}"
 

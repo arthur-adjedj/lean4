@@ -251,38 +251,58 @@ private partial def isArrowProp : Expr → Nat → MetaM LBool
   | .mdata _ e,       n   => isArrowProp e n
   | _,                _   => return LBool.undef
 
+@[inline]
+def LBoolEmoji : LBool → String
+  | .true => checkEmoji
+  | .false => crossEmoji
+  | .undef => bombEmoji
+
+@[inline]
+def exceptLBoolEmoji : Except ε LBool → String
+  | .error _ => bombEmoji
+  | .ok b => LBoolEmoji b
+
 /--
 `isPropQuickApp f n` is an "approximate" predicate which returns `LBool.true`
 if `f` applied to `n` arguments is a proposition.
 -/
-private partial def isPropQuickApp : Expr → Nat → MetaM LBool
+private partial def isPropQuickApp (e : Expr) (arity : Nat) (bvarsInProp : Array LBool := #[]) (depth := 0): MetaM LBool :=
+withTraceNode `Meta.isProof (fun b => return m!"{exceptLBoolEmoji b} isPropQuickApp {e} {arity} {bvarsInProp}") do
+match e, arity with
   | .const c lvls,   arity   => do let constType ← inferConstType c lvls; isArrowProp constType arity
   | .fvar fvarId,    arity   => do let fvarType  ← inferFVarType fvarId;  isArrowProp fvarType arity
   | .mvar mvarId,    arity   => do let mvarType  ← inferMVarType mvarId;  isArrowProp mvarType arity
-  | .app f ..,       arity   => isPropQuickApp f (arity+1)
-  | .mdata _ e,      arity   => isPropQuickApp e arity
-  | .letE _ _ _ b _, arity   => isPropQuickApp b arity
+  | .bvar b,         _       => return if let some lbool := bvarsInProp[bvarsInProp.size-b-depth-1]? then lbool else LBool.undef
+  | .app f ..,       arity   => isPropQuickApp f (arity+1) bvarsInProp
+  | .mdata _ e,      arity   => isPropQuickApp e arity bvarsInProp
+  | .letE _ _ _ b _, arity   => isPropQuickApp b arity bvarsInProp (depth+1)
   | .lam ..,         0       => return LBool.false
-  | .lam _ _ b _,    arity+1 => isPropQuickApp b arity
+  | .lam _ _ b _,    arity+1 => isPropQuickApp b arity bvarsInProp (depth+1)
   | _,               _       => return LBool.undef
 
 /--
 `isPropQuick e` is an "approximate" predicate which returns `LBool.true`
 if `e` is a proposition.
 -/
-partial def isPropQuick : Expr → MetaM LBool
-  | .bvar ..          => return LBool.undef
+partial def isPropQuick (e : Expr) (bvarsInProp : Array LBool := #[]) : MetaM LBool :=
+withTraceNode `Meta.isProof (fun b => return m!"{exceptLBoolEmoji b} isPropQuick {e} {bvarsInProp}") do
+match e with
+  | .bvar b           => return if let some lbool := bvarsInProp[bvarsInProp.size-b-1]? then lbool else LBool.undef
   | .lit ..           => return LBool.false
   | .sort ..          => return LBool.false
   | .lam ..           => return LBool.false
-  | .letE _ _ _ b _   => isPropQuick b
+  | .letE _ ty _ b _   => do
+    let tyIsProp ← isPropQuick ty bvarsInProp
+    isPropQuick b (bvarsInProp.push tyIsProp)
   | .proj ..          => return LBool.undef
-  | .forallE _ _ b _  => isPropQuick b
-  | .mdata _ e        => isPropQuick e
+  | .forallE _ ty b _  => do
+    let tyIsProp ← isPropQuick ty bvarsInProp
+    isPropQuick b (bvarsInProp.push tyIsProp)
+  | .mdata _ e        => isPropQuick e bvarsInProp
   | .const c lvls     => do let constType ← inferConstType c lvls; isArrowProp constType 0
   | .fvar fvarId      => do let fvarType  ← inferFVarType fvarId;  isArrowProp fvarType 0
   | .mvar mvarId      => do let mvarType  ← inferMVarType mvarId;  isArrowProp mvarType 0
-  | .app f ..         => isPropQuickApp f 1
+  | .app f ..         => isPropQuickApp f 1 bvarsInProp
 
 /--
 `isProp e` returns `true` if `e` is a proposition.
@@ -380,40 +400,48 @@ Remark: `type` can be a dependent arrow.
 private def isArrowProposition (e : Expr) (n : Nat) : MetaM LBool :=
   return (← isArrowProposition' e n).toLBool
 
-mutual
-/--
-`isProofQuickApp f n` is an "approximate" predicate which returns `LBool.true` if `f` applied to
-`n` arguments is a proof.
--/
-private partial def isProofQuickApp : Expr → Nat → MetaM LBool
-  | .const c lvls,   arity   => do let constType ← inferConstType c lvls; isArrowProposition constType arity
-  | .fvar fvarId,    arity   => do let fvarType  ← inferFVarType fvarId;  isArrowProposition fvarType arity
-  | .mvar mvarId,    arity   => do let mvarType  ← inferMVarType mvarId;  isArrowProposition mvarType arity
-  | .app f _,        arity   => isProofQuickApp f (arity+1)
-  | .mdata _ e,      arity   => isProofQuickApp e arity
-  | .letE _ _ _ b _, arity   => isProofQuickApp b arity
-  | .lam _ _ b _,    0       => isProofQuick b
-  | .lam _ _ b _,    arity+1 => isProofQuickApp b arity
-  | _,               _       => return LBool.undef
+-- /--
+-- `isProofQuickApp f n` is an "approximate" predicate which returns `LBool.true` if `f` applied to
+-- `n` arguments is a proof.
+-- -/
+-- private partial def isProofQuickApp : Expr → Nat → MetaM LBool
+--   | .const c lvls,   arity   => do let constType ← inferConstType c lvls; isArrowProposition constType arity
+--   | .fvar fvarId,    arity   => do let fvarType  ← inferFVarType fvarId;  isArrowProposition fvarType arity
+--   | .mvar mvarId,    arity   => do let mvarType  ← inferMVarType mvarId;  isArrowProposition mvarType arity
+--   | .app f _,        arity   => isProofQuickApp f (arity+1)
+--   | .mdata _ e,      arity   => isProofQuickApp e arity
+--   | .letE _ _ _ b _, arity   => isProofQuickApp b arity
+--   | .lam _ _ b _,    0       => isProofQuick b
+--   | .lam _ _ b _,    arity+1 => isProofQuickApp b arity
+--   | _,               _       => return LBool.undef
 
 /--
 `isProofQuick e` is an "approximate" predicate which returns `LBool.true` if `e` is a proof.
 -/
-partial def isProofQuick : Expr → MetaM LBool
-  | .bvar ..          => return LBool.undef
-  | .lit ..           => return LBool.false
-  | .sort ..          => return LBool.false
-  | .lam _ _ b _      => isProofQuick b
-  | .letE _ _ _ b _   => isProofQuick b
-  | .proj ..          => return LBool.undef
-  | .forallE ..       => return LBool.false
-  | .mdata _ e        => isProofQuick e
-  | .const c lvls     => do let constType ← inferConstType c lvls; isArrowProposition constType 0
-  | .fvar fvarId      => do let fvarType  ← inferFVarType fvarId;  isArrowProposition fvarType 0
-  | .mvar mvarId      => do let mvarType  ← inferMVarType mvarId;  isArrowProposition mvarType 0
-  | .app f ..         => isProofQuickApp f 1
+partial def isProofQuick (e : Expr) (bvarsRelevance : Array LBool := #[]) :  MetaM LBool :=
+withTraceNode `Meta.isProof (fun b => return m!"{exceptLBoolEmoji b} isProofQuick {e} {bvarsRelevance}") do
+  match e with
+    | .bvar b            => return if let some lbool := bvarsRelevance[bvarsRelevance.size-b-1]? then lbool else LBool.undef
+    | .lit ..            => return LBool.false
+    | .sort ..           => return LBool.false
+    | .lam _ ty b _      => do
+      let tyRelevance ← isPropQuick ty
+      let bvarsRelevance := bvarsRelevance.push tyRelevance
+      isProofQuick b bvarsRelevance
+    | .letE _ _ te b _   => do
+      let tyRelevance ← isPropQuick te
+      let bvarsRelevance := bvarsRelevance.push tyRelevance
+      isProofQuick b bvarsRelevance
+    | .proj ..          => return LBool.undef
+    | .forallE ..       => return LBool.false
+    | .mdata _ e        => isProofQuick e bvarsRelevance
+    | .const c lvls     => do let constType ← inferConstType c lvls; isArrowProposition constType 0
+    | .fvar fvarId      => do let fvarType  ← inferFVarType fvarId;  isArrowProposition fvarType 0
+    | .mvar mvarId      => do let mvarType  ← inferMVarType mvarId;  isArrowProposition mvarType 0
+    | .app f ..         => isProofQuick f bvarsRelevance
 
-end
+-- end
+
 
 /-- Check if `e` is a proof, i.e. the type of `e` is a proposition. -/
 def isProof (e : Expr) : MetaM Bool := do
@@ -549,3 +577,6 @@ def inferArgumentTypesN (n : Nat) (e : Expr) : MetaM (Array Expr) := do
   arrowDomainsN n (← inferType e)
 
 end Lean.Meta
+
+builtin_initialize
+  Lean.registerTraceClass `Meta.isProof

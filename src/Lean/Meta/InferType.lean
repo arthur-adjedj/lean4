@@ -288,32 +288,56 @@ match e, arity with
   | .lam _ _ b _,    arity+1 => isPropQuickApp b arity bvarsInProp (depth+1)
   | _,               _       => return LBool.undef
 
+@[inline]
+def _root_.Lean.LBool.toBool? : LBool → Option Bool
+  | .true  => some true
+  | .false => some false
+  | .undef => none
+
+@[inline] private def cachedIsProp? (e : Expr) : MetaM (Option Bool) := do
+  return (← get).cache.isProp.find? (← mkExprConfigCacheKey e)
+
+@[inline]
+private def cacheIsProp (e : Expr) (r : Bool) : MetaM Bool := do
+  let key ← mkExprConfigCacheKey e
+  modify fun s => { s with cache.isProp := s.cache.isProp.insert key r }
+  return r
+
+@[inline]
+private def cacheIsPropifNoBVars (e : Expr) (r : LBool) : MetaM LBool := do
+  if !e.hasLooseBVars then
+    if let some r := r.toBool? then
+      let key ← mkExprConfigCacheKey e
+      modify fun s => { s with cache.isProp := s.cache.isProp.insert key r }
+  return r
+
 /--
 `isPropQuick e` is an "approximate" predicate which returns `LBool.true`
 if `e` is a proposition.
 -/
-partial def isPropQuick (e : Expr) (bvarsInProp : Array Expr := #[]) : MetaM LBool :=
--- withTraceNode `Meta.isProof (fun b => return m!"{exceptLBoolEmoji b} isPropQuick {e} {bvarsInProp}") do
-match e with
-  | .bvar b           =>
-    let idx := bvarsInProp.size-b-1
-    if let some ty := bvarsInProp[idx]? then
-      isArrowProp ty 0
-    else
-      return LBool.undef
-  | .lit ..           => return LBool.false
-  | .sort ..          => return LBool.false
-  | .lam ..           => return LBool.false
-  | .letE _ _ ty b _   => do
-    isPropQuick b (bvarsInProp.push ty)
-  | .proj ..          => return LBool.undef
-  | .forallE _ ty b _  => do
-    isPropQuick b (bvarsInProp.push ty)
-  | .mdata _ e        => isPropQuick e bvarsInProp
-  | .const c lvls     => do let constType ← inferConstType c lvls; isArrowProp constType 0
-  | .fvar fvarId      => do let fvarType  ← inferFVarType fvarId;  isArrowProp fvarType 0
-  | .mvar mvarId      => do let mvarType  ← inferMVarType mvarId;  isArrowProp mvarType 0
-  | .app f ..         => isPropQuickApp f 1 bvarsInProp
+partial def isPropQuick (e : Expr) (bvarsInProp : Array Expr := #[]) : MetaM LBool := do
+  if let some r ← cachedIsProp? e then return r.toLBool
+  -- withTraceNode `Meta.isProof (fun b => return m!"{exceptLBoolEmoji b} isPropQuick {e} {bvarsInProp}") do
+  match e with
+    | .bvar b           =>
+      let idx := bvarsInProp.size-b-1
+      if let some ty := bvarsInProp[idx]? then
+        cacheIsPropifNoBVars e (← isArrowProp ty 0)
+      else
+        return LBool.undef
+    | .lit ..           => return LBool.false
+    | .sort ..          => return LBool.false
+    | .lam ..           => return LBool.false
+    | .letE _ _ ty b _   => do
+      cacheIsPropifNoBVars e (← isPropQuick b (bvarsInProp.push ty))
+    | .proj ..          => return LBool.undef
+    | .forallE _ ty b _  => do
+      cacheIsPropifNoBVars e (← isPropQuick b (bvarsInProp.push ty))
+    | .mdata _ e        => cacheIsPropifNoBVars e (← isPropQuick e bvarsInProp)
+    | .const c lvls     => do let constType ← inferConstType c lvls; cacheIsPropifNoBVars e (← isArrowProp constType 0)
+    | .fvar fvarId      => do let fvarType  ← inferFVarType fvarId;  cacheIsPropifNoBVars e (← isArrowProp fvarType 0)
+    | .mvar mvarId      => do let mvarType  ← inferMVarType mvarId;  cacheIsPropifNoBVars e (← isArrowProp mvarType 0)
+    | .app f ..         => cacheIsPropifNoBVars e (← isPropQuickApp f 1 bvarsInProp)
 
 /--
 `isProp e` returns `true` if `e` is a proposition.
@@ -323,15 +347,18 @@ We return `false` in this case. We considered using `LBool` and returning `LBool
 have no applications for it.
 -/
 def isProp (e : Expr) : MetaM Bool := do
-  match (← isPropQuick e) with
-  | .true  => return true
-  | .false => return false
-  | .undef =>
-    let type ← inferType e
-    let type ← whnfD type
-    match type with
-    | Expr.sort u => return isAlwaysZero (← instantiateLevelMVars u)
-    | _           => return false
+  match ← cachedIsProp? e with
+    | some b => return b
+    | none =>
+      match (← isPropQuick e) with
+      | .true  => cacheIsProp e true
+      | .false => cacheIsProp e false
+      | .undef =>
+        let type ← inferType e
+        let type ← whnfD type
+        match type with
+        | Expr.sort u => cacheIsProp e (isAlwaysZero (← instantiateLevelMVars u))
+        | _           => cacheIsProp e false
 
 -- /--
 -- `isProofQuickApp f n` is an "approximate" predicate which returns `LBool.true` if `f` applied to
@@ -348,43 +375,64 @@ def isProp (e : Expr) : MetaM Bool := do
 --   | .lam _ _ b _,    arity+1 => isProofQuickApp b arity
 --   | _,               _       => return LBool.undef
 
+@[inline] private def cachedIsProof? (e : Expr) : MetaM (Option Bool) := do
+  return (← get).cache.isProof.find? (← mkExprConfigCacheKey e)
+
+@[inline]
+private def cacheIsProof (e : Expr) (r : Bool) : MetaM Bool := do
+  let key ← mkExprConfigCacheKey e
+  modify fun s => { s with cache.isProof := s.cache.isProof.insert key r }
+  return r
+
+@[inline]
+private def cacheIsProofifNoBVars (e : Expr) (r : LBool) : MetaM LBool := do
+  if !e.hasLooseBVars then
+    if let some r := r.toBool? then
+      let key ← mkExprConfigCacheKey e
+      modify fun s => { s with cache.isProof := s.cache.isProof.insert key r }
+  return r
+
 /--
 `isProofQuick e` is an "approximate" predicate which returns `LBool.true` if `e` is a proof.
 -/
-partial def isProofQuick (e : Expr) (bvarsInProp : Array Expr := #[]) :  MetaM LBool :=
+partial def isProofQuick (e : Expr) (bvarsInProp : Array Expr := #[]) :  MetaM LBool := do
+  if let some r ← cachedIsProof? e then return r.toLBool
 -- withTraceNode `Meta.isProof (fun b => return m!"{exceptLBoolEmoji b} isProofQuick {e} {bvarsInProp}") do
   match e with
     | .bvar b            =>
       let idx := bvarsInProp.size-b-1
       if let some lbool := bvarsInProp[idx]? then
-        isPropQuick lbool bvarsInProp
+        cacheIsProofifNoBVars e (← isPropQuick lbool bvarsInProp)
       else
         return LBool.undef
     | .lit ..            => return LBool.false
     | .sort ..           => return LBool.false
     | .lam _ ty b _      => do
       let bvarsInProp := bvarsInProp.push ty
-      isProofQuick b bvarsInProp
+      cacheIsProofifNoBVars e (← isProofQuick b bvarsInProp)
     | .letE _ ty _ b _   => do
       let bvarsInProp := bvarsInProp.push ty
-      isProofQuick b bvarsInProp
+      cacheIsProofifNoBVars e (← isProofQuick b bvarsInProp)
     | .proj ..          => return LBool.undef
     | .forallE ..       => return LBool.false
-    | .mdata _ e        => isProofQuick e bvarsInProp
-    | .const c lvls     => do let constType ← inferConstType c lvls; isPropQuick constType bvarsInProp
-    | .fvar fvarId      => do let fvarType  ← inferFVarType fvarId;  isPropQuick fvarType bvarsInProp
-    | .mvar mvarId      => do let mvarType  ← inferMVarType mvarId;  isPropQuick mvarType bvarsInProp
-    | .app f ..         => isProofQuick f bvarsInProp
+    | .mdata _ e        => cacheIsProofifNoBVars e (← isProofQuick e bvarsInProp)
+    | .const c lvls     => let constType ← inferConstType c lvls; cacheIsProofifNoBVars e (← isPropQuick constType bvarsInProp)
+    | .fvar fvarId      => let fvarType  ← inferFVarType fvarId;  cacheIsProofifNoBVars e (← isPropQuick fvarType bvarsInProp)
+    | .mvar mvarId      => let mvarType  ← inferMVarType mvarId;  cacheIsProofifNoBVars e (← isPropQuick mvarType bvarsInProp)
+    | .app f ..         => cacheIsProofifNoBVars e (← isProofQuick f bvarsInProp)
 
 -- end
 
 
 /-- Check if `e` is a proof, i.e. the type of `e` is a proposition. -/
 def isProof (e : Expr) : MetaM Bool := do
-  match (← isProofQuick e) with
-  | .true  => return true
-  | .false => return false
-  | .undef => Meta.isProp (← inferType e)
+  match ← cachedIsProof? e with
+    | some b => return b
+    | none =>
+      match (← isProofQuick e) with
+      | .true  => cacheIsProof e true
+      | .false => cacheIsProof e false
+      | .undef => cacheIsProof e (← Meta.isProp (← inferType e))
 
 /--
 `isArrowType type n` is an "approximate" predicate which returns `LBool.true` if `type` is of the

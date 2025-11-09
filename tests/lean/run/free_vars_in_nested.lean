@@ -18,8 +18,14 @@ inductive Bar : Type
 
 /--
 info: FvarsInParams.Bar.rec.{u} {motive_1 : Bar → Sort u} {motive_2 : {n k : Nat} → (a : Nat) → Foo n Bar k a → Sort u}
-  (bar : {n k : Nat} → (a : Foo n Bar k 0) → @motive_2 n k 0 a → motive_1 (@Bar.bar n k a))
-  (foo : {n k : Nat} → (a : Nat) → @motive_2 n k 0 (@Foo.foo n Bar k a)) (t : Bar) : motive_1 t
+  (bar :
+    {n k : Nat} →
+      (a : Foo n Bar k (@OfNat.ofNat Nat (nat_lit 0) (instOfNatNat (nat_lit 0)))) →
+        @motive_2 n k (@OfNat.ofNat Nat (nat_lit 0) (instOfNatNat (nat_lit 0))) a → motive_1 (@Bar.bar n k a))
+  (foo :
+    {n k : Nat} →
+      (a : Nat) → @motive_2 n k (@OfNat.ofNat Nat (nat_lit 0) (instOfNatNat (nat_lit 0))) (@Foo.foo n Bar k a))
+  (t : Bar) : motive_1 t
 -/
 #guard_msgs in
 #check Bar.rec
@@ -56,9 +62,8 @@ def foo : DepthTree 4 :=
   ⟨[]⟩
 ]⟩
 
-/-- info: 12 -/
-#guard_msgs in
-#reduce foo.sum
+example : foo.sum = 12 := by
+  simp [foo,DepthTree.sum,ListTest.sum]
 
 /--
 info: FvarsInParams.DepthTree.rec.{u} {motive_1 : (a : Nat) → DepthTree a → Sort u}
@@ -66,14 +71,18 @@ info: FvarsInParams.DepthTree.rec.{u} {motive_1 : (a : Nat) → DepthTree a → 
   (foo :
     {n : Nat} →
       (a : List (DepthTree n)) →
-        @motive_2 n a → motive_1 (@HAdd.hAdd Nat Nat Nat (@instHAdd Nat instAddNat) n 1) (@DepthTree.foo n a))
+        @motive_2 n a →
+          motive_1
+            (@HAdd.hAdd Nat Nat Nat (@instHAdd Nat instAddNat) n
+              (@OfNat.ofNat Nat (nat_lit 1) (instOfNatNat (nat_lit 1))))
+            (@DepthTree.foo n a))
   (nil : {n : Nat} → @motive_2 n (@List.nil (DepthTree n)))
   (cons :
     {n : Nat} →
       (head : DepthTree n) →
         (tail : List (DepthTree n)) →
-          motive_1 n head → @motive_2 n tail → @motive_2 n (@List.cons (DepthTree n) head tail)) :
-  {a : Nat} → (t : DepthTree a) → motive_1 a t
+          motive_1 n head → @motive_2 n tail → @motive_2 n (@List.cons (DepthTree n) head tail))
+  {a✝ : Nat} (t : DepthTree a✝) : motive_1 a✝ t
 -/
 #guard_msgs in
 #check DepthTree.rec
@@ -126,7 +135,7 @@ info: RegExp.Lang.rec.{u} {motive_1 : (a : Regex) → (a_1 : String) → Lang a 
               motive_1 r1 str1 a →
                 motive_1 r2 str2 a_1 →
                   motive_1 (r1.concat r2)
-                    (@HAppend.hAppend String String String (@instHAppendOfAppend String String.instAppend) str1 str2)
+                    (@HAppend.hAppend String String String (@instHAppendOfAppend String instAppendString) str1 str2)
                     (Lang.concat r1 str1 str2 r2 a a_1))
   (inl :
     (str : String) →
@@ -142,8 +151,8 @@ info: RegExp.Lang.rec.{u} {motive_1 : (a : Regex) → (a_1 : String) → Lang a 
         (fst : Lang r1 str) →
           (snd : Lang r2 str) →
             motive_1 r1 str fst →
-              motive_1 r2 str snd → motive_3 str r1 r2 (@Prod.mk (Lang r1 str) (Lang r2 str) fst snd)) :
-  {a : Regex} → {a_1 : String} → (t : Lang a a_1) → motive_1 a a_1 t
+              motive_1 r2 str snd → motive_3 str r1 r2 (@Prod.mk (Lang r1 str) (Lang r2 str) fst snd))
+  {a✝ : Regex} {a✝¹ : String} (t : Lang a✝ a✝¹) : motive_1 a✝ a✝¹ t
 -/
 #guard_msgs in
 #check Lang.rec
@@ -159,13 +168,15 @@ namespace Indexed
 inductive Foo : Type → Type 1
   | mk {α : Type} : Option (Foo (Unit × α)) → Foo α
 
-/-- info: Indexed.Foo.rec.{u} {motive_1 : (a : Type) → Foo a → Sort u}
+/--
+info: Indexed.Foo.rec.{u} {motive_1 : (a : Type) → Foo a → Sort u}
   {motive_2 : {α : Type} → Option (Foo (Prod Unit α)) → Sort u}
   (mk : {α : Type} → (a : Option (Foo (Prod Unit α))) → @motive_2 α a → motive_1 α (@Foo.mk α a))
   (none : {α : Type} → @motive_2 α (@none (Foo (Prod Unit α))))
   (some :
-    {α : Type} → (val : Foo (Prod Unit α)) → motive_1 (Prod Unit α) val → @motive_2 α (@some (Foo (Prod Unit α)) val)) :
-  {a : Type} → (t : Foo a) → motive_1 a t -/
+    {α : Type} → (val : Foo (Prod Unit α)) → motive_1 (Prod Unit α) val → @motive_2 α (@some (Foo (Prod Unit α)) val))
+  {a✝ : Type} (t : Foo a✝) : motive_1 a✝ t
+-/
 #guard_msgs in
 #check Foo.rec
 
@@ -184,8 +195,8 @@ info: InBinder.Foo.rec.{u} {motive_1 : (a : Type) → Foo a → Sort u}
       (a : Nat → Option (Foo (Prod Unit α))) → ((a_1 : Nat) → @motive_2 α (a a_1)) → motive_1 α (@Foo.mk α a))
   (none : {α : Type} → @motive_2 α (@none (Foo (Prod Unit α))))
   (some :
-    {α : Type} → (val : Foo (Prod Unit α)) → motive_1 (Prod Unit α) val → @motive_2 α (@some (Foo (Prod Unit α)) val)) :
-  {a : Type} → (t : Foo a) → motive_1 a t
+    {α : Type} → (val : Foo (Prod Unit α)) → motive_1 (Prod Unit α) val → @motive_2 α (@some (Foo (Prod Unit α)) val))
+  {a✝ : Type} (t : Foo a✝) : motive_1 a✝ t
 -/
 #guard_msgs in
 #check Foo.rec
@@ -234,3 +245,14 @@ inductive IsSmart : Desc → Prop
     → IsSmart d
 
 end Issue2195
+
+inductive HereditarilyBarred {α : Type _} (Pr : List α → Prop) (T : List α → Prop) : (l : List α) → T l → Prop where
+  | hbar (l : List α) (tl : T l)  : Pr l ∨ (¬ Pr l → (a : α) → (tal : T (a :: l)) → HereditarilyBarred Pr T (a::l) tal) → HereditarilyBarred Pr T l tl
+
+inductive SizedList (α: Type): Nat -> Type where
+  -- | nil: SizedList α 0
+  | cons: forall n, α -> SizedList α n -> SizedList α (n+1)
+
+inductive Tree (arity: Nat): Nat -> Type where
+  -- | leaf (d: Nat): Tree arity d
+  | node (d: Nat) (args: SizedList (Tree arity d) arity): Tree arity (d+1)

@@ -950,13 +950,12 @@ struct elim_nested_inductive_fn {
         optional<constant_info> info = m_env.find(const_name(fn));
         if (!info || !info->is_inductive()) return optional<pair<inductive_val,buffer<nat>>> ();
         unsigned nparams = info->to_inductive_val().get_nparams();
-        unsigned nindices = info->to_inductive_val().get_nindices();
         buffer<expr> args;
-        expr I_Ds = get_app_args_at_most(e, nindices, args);
-        buffer<nat> bvars = loose_bvars(I_Ds);
-        // bvars.sort();
         get_app_args(e,args);
         if (nparams > args.size()) return optional<pair<inductive_val,buffer<nat>>> ();
+        expr I_Ds = get_app_fn(e);
+             I_Ds = mk_app(I_Ds,nparams,args.data());
+        buffer<nat> bvars = loose_bvars(I_Ds);
         bool is_nested   = false;
         for (unsigned i = 0; i < nparams; i++) {
             if (find(args[i], [&](expr const & t, unsigned) {
@@ -1007,7 +1006,7 @@ struct elim_nested_inductive_fn {
         unsigned min_loose_bvar = lowest_loose_bvar(Iparams);
         if (min_loose_bvar) {
             Iparams = lower_loose_bvars(Iparams, 0, min_loose_bvar);
-            for (unsigned i = 0; i < args.size();i++) {
+            for (unsigned i = 0; i < I_nparams;i++) {
                 args[i] = lower_loose_bvars(args[i], 0, min_loose_bvar);
             }
         }

@@ -4,7 +4,6 @@ import Lean.Meta
 open Lean Meta
 
 set_option autoImplicit false
-set_option genSizeOfSpec false
 set_option pp.explicit true
 
 
@@ -40,7 +39,7 @@ inductive DepthTree : Nat → Type
 
 mutual
 def DepthTree.sum {n}: DepthTree n → Nat
-  | .foo l => 1+ListTest.sum l
+  | .foo l => 1 + ListTest.sum l
 
 def ListTest.sum {n}: List (DepthTree n) → Nat
   | [] => 0

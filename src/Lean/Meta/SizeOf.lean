@@ -101,16 +101,25 @@ private partial def mkSizeOfRecFieldFormIH (ih : Expr) : MetaM Expr := do
   else
      return ih
 
+def addedIndices (motiveFVars : Array Expr) (fvar : Expr) : MetaM Nat := do
+  let some motive := motiveFVars.find? (· == fvar) | unreachable!
+  forallTelescope (← inferType motive) fun xs _ => do
+    let indType ← inferType xs[xs.size-1]!
+    let indType ← getConstInfoInduct indType.getAppFn.constName!
+    return xs.size-1-indType.numIndices
+
 private partial def mkSizeOfMinors (motiveFVars : Array Expr) (minorFVars : Array Expr) (minorFVars' : Array Expr) (k : Array Expr → MetaM α) : MetaM α :=
   assert! minorFVars.size == minorFVars'.size
   loop 0 #[]
 where
   loop (i : Nat) (minors : Array Expr) : MetaM α := do
     if i < minorFVars.size then
-      forallTelescopeReducing (← inferType minorFVars[i]!) fun xs _ => do
+      forallTelescopeReducing (← inferType minorFVars[i]!) fun xs motive => do
+      let motive := motive.getAppFn
+      let addedIndices ← addedIndices motiveFVars motive
       forallBoundedTelescope (← inferType minorFVars'[i]!) xs.size fun xs' _ => do
         let mut minor ← mkNumeral (mkConst ``Nat) 1
-        for x in xs, x' in xs' do
+        for x in xs[addedIndices:], x' in xs'[addedIndices:] do
           unless (← isInductiveHypothesis motiveFVars x) do
           unless (← ignoreField x) do -- we suppress higher-order fields
             match (← isRecField? motiveFVars xs x) with

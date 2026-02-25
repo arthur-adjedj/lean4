@@ -372,17 +372,20 @@ structure RecursorVal extends ConstantVal where
   -/
   k : Bool
   isUnsafe : Bool
+  /-- Its motives eliminate to `Sort u`s instead of just `Prop`, i.e the inductive type for the recursor either lives in `Type` or is a subsingleton-/
+  isSortPoly : Bool
   deriving Inhabited, BEq
 
 @[export lean_mk_recursor_val]
 def mkRecursorValEx (name : Name) (levelParams : List Name) (type : Expr) (all : List Name) (numParams numIndices numMotives numMinors : Nat)
-    (rules : List RecursorRule) (k isUnsafe : Bool) : RecursorVal := {
+    (rules : List RecursorRule) (k isUnsafe isSortPoly: Bool) : RecursorVal := {
   name, levelParams, type, all, numParams, numIndices,
-  numMotives, numMinors, rules, k, isUnsafe
+  numMotives, numMinors, rules, k, isUnsafe, isSortPoly
 }
 
 @[export lean_recursor_k] def RecursorVal.kEx (v : RecursorVal) : Bool := v.k
 @[export lean_recursor_is_unsafe] def RecursorVal.isUnsafeEx (v : RecursorVal) : Bool := v.isUnsafe
+@[export lean_recursor_is_sort_poly] def RecursorVal.isSortPolyEx (v : RecursorVal) : Bool := v.isSortPoly
 
 def RecursorVal.getMajorIdx (v : RecursorVal) : Nat :=
   v.numParams + v.numMotives + v.numMinors + v.numIndices

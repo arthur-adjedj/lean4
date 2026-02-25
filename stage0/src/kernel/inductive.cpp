@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 
 Author: Leonardo de Moura
 */
+#include <fstream>
 #include "runtime/sstream.h"
 #include "runtime/utf8.h"
 #include "util/name_generator.h"
@@ -769,9 +770,19 @@ public:
             name rec_name         = mk_rec_name(m_ind_types[d_idx].get_name());
             names rec_lparams     = get_rec_lparams();
             m_env.check_name(rec_name);
+            bool is_sort_poly     = is_param(m_elim_level);            
+            // Debug: write is_sort_poly status to file
+            {
+                std::ofstream debug_file(std::string(getenv("HOME")) + "/Projects/lean4/debug.txt", std::ios::app);
+                if (debug_file.is_open()) {
+                    debug_file << "Recursor: " << rec_name << " | is_sort_poly: " << (is_sort_poly ? "true" : "false") << std::endl;
+                    debug_file.close();
+                }
+            }
+            
             m_env.add_core(constant_info(recursor_val(rec_name, rec_lparams, rec_ty, all,
                                                       m_nparams, m_nindices[d_idx], nmotives, nminors,
-                                                      rules, m_K_target, m_is_unsafe)));
+                                                      rules, m_K_target, m_is_unsafe, is_sort_poly)));
         }
     }
 
@@ -1150,7 +1161,7 @@ environment environment::add_inductive(declaration const & d) const {
             new_env.add_core(constant_info(recursor_val(new_rec_name, rec_info.get_lparams(), new_rec_type,
                                                         all_ind_names, rec_val.get_nparams(), rec_val.get_nindices(), rec_val.get_nmotives(),
                                                         rec_val.get_nminors(), recursor_rules(new_rules),
-                                                        rec_val.is_k(), rec_val.is_unsafe())));
+                                                        rec_val.is_k(), rec_val.is_unsafe(), rec_val.is_sort_poly())));
         };
         for (inductive_type const & ind_type : ind_d.get_types()) {
             constant_info ind_info = aux_env.get(ind_type.get_name());

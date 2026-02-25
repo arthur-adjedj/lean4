@@ -769,7 +769,16 @@ public:
             name rec_name         = mk_rec_name(m_ind_types[d_idx].get_name());
             names rec_lparams     = get_rec_lparams();
             m_env.check_name(rec_name);
-            bool is_sort_poly     = is_param(m_elim_level);
+            bool is_sort_poly     = is_param(m_elim_level);            
+            // Debug: write is_sort_poly status to file
+            {
+                std::ofstream debug_file(std::string(getenv("HOME")) + "/Projects/lean4/debug.txt", std::ios::app);
+                if (debug_file.is_open()) {
+                    debug_file << "Recursor: " << rec_name << " | is_sort_poly: " << (is_sort_poly ? "true" : "false") << std::endl;
+                    debug_file.close();
+                }
+            }
+            
             m_env.add_core(constant_info(recursor_val(rec_name, rec_lparams, rec_ty, all,
                                                       m_nparams, m_nindices[d_idx], nmotives, nminors,
                                                       rules, m_K_target, m_is_unsafe, is_sort_poly)));

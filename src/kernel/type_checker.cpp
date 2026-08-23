@@ -1115,18 +1115,18 @@ bool type_checker::is_unit_like(expr const & t) {
     constant_val ctor_val = env().get(ctor_name).to_constructor_val().to_constant_val();
     expr ctor_ty = ctor_val.get_type();
     ctor_ty = instantiate_lparams(ctor_ty, ctor_val.get_lparams(), const_levels(I));
-    // `I` is a structure, and in particular has no indices. Furthermore, it is a type, so `args.size() = I_val.nparams()`
     for (unsigned i = 0; i < args.size(); i++)
         ctor_ty = binding_body(ctor_ty);
     ctor_ty = instantiate_rev(ctor_ty, args.size(), args.data());
-    // Check that every field (read, every domain) of the constructor are themselves unit-like
+    buffer<expr> fields;
+    // Check that every field of the constructor are themselves unit-like
     while (is_pi(ctor_ty)) {
-        expr hd = binding_domain(ctor_ty);
-        if (!is_prop(hd) && !is_unit_like(hd))
+        expr hd = instantiate_rev(binding_domain(ctor_ty), fields.size(), fields.data());
+        if (!(is_prop(hd) || is_unit_like(hd)))
             return false;
         expr x  = m_lctx.mk_local_decl(m_st->m_ngen, binding_name(ctor_ty), hd, binding_info(ctor_ty));
-        fvars.push_back(x);
-        ctor_ty = whnf(instantiate(binding_body(ctor_ty), x));
+        fields.push_back(x);
+        ctor_ty = binding_body(ctor_ty);
     }
     return true;
 }
@@ -1136,21 +1136,12 @@ bool type_checker::is_unit_like(expr const & t) {
   with a single constructor for which all fields are unit-like or Prop types,
   or a dependent arrow for which the final codomain is unit-like. */
 bool type_checker::is_def_eq_unit_like(expr const & t, expr const & s) {
-    expr t_type = whnf(infer_type(t));
-    expr I = get_app_fn(t_type);
-    if (!is_constant(I) || !is_non_rec_structure(env(), const_name(I)))
+    expr t_type = infer_type(t);
     if (!is_unit_like(t_type))
         return false;
-    name ctor_name = head(env().get(const_name(I)).to_inductive_val().get_cnstrs());
-    constructor_val ctor_val = env().get(ctor_name).to_constructor_val();
-    if (ctor_val.get_nfields() != 0)
-        return false;
-    return is_def_eq_core(t_type, infer_type(s));
     //This should always be true under the invariant that terms that get compared must be known to have defeq types
     // Also, should this be is_def_eq_core or is_def_eq ?
-    if (is_def_eq_core(t_type, infer_type(s)))
-        return true;
-    return false;
+    return is_def_eq_core(t_type, infer_type(s));
 }
 
 bool type_checker::is_def_eq_core(expr const & t, expr const & s) {

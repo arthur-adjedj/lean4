@@ -2358,25 +2358,25 @@ private def cacheUnitLike (e : Expr) (b : Bool) : MetaM Bool := do
   modifyUnitLikeCache (·.insert key b)
   return b
 
-/-- Takes a type of the form `A1 -> ... -> An-> I As`, checks that `I` is a (non-recursive) structure, and that each (instantiated) fields is itself either a proposition or a unit-like type-/
+/--
+  A type is said to be "unit-like" if it is of the form `A1 -> ... -> An-> I As`, where `I` is a (non-recursive) structure, and where each (instantiated) fields of the structure are a proposition or themselves a unit-like. If a type has such a type, then all terms of that type are trivialle definitionally equal.
+-/
 private partial def isUnitLikeType (e : Expr) : MetaM Bool :=
   forallTelescopeReducing (whnfType := true) e fun _ tType => do
     let hd := tType.getAppFn
     matchConstNonRecStructure hd (fun _ => pure false) fun _ _ ctorVal => do
       let ctorType := ctorVal.type
           |>.instantiateLevelParams ctorVal.levelParams hd.constLevels!
-          -- `tType` is a structure, and in particular has no indices. Furthermore, it is a type, so `args.size() = I_val.nparams()`
+          -- `tType` is a structure type, and in particular has no indices, so `args.size() = I_val.nparams()`
           |>.getForallBodyMaxDepth tType.getAppNumArgs
           |>.instantiateRev tType.getAppArgs
       forallTelescope ctorType fun xs _ =>
-        xs.allM fun e => do
-          let ty ← e.fvarId!.getType
+        xs.allM fun fvar => do
+          let ty ← fvar.fvarId!.getType
           isProp ty <||> isUnitLikeType ty
 
 /--
-  Return `true` if the types of the given expressions is a non-recursive, non-indexed inductive datatype
-  with a single constructor for which all fields are unit-like or Prop types,
-  or a dependent arrow for which the codomain is unit-like.
+  Return `true` if the types of two given expressions unit-like.
 -/
 private def isDefEqUnitLike (t : Expr) (s : Expr) : MetaM Bool := do
   let tType ← inferType t

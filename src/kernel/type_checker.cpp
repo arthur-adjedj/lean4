@@ -1090,21 +1090,18 @@ lbool type_checker::try_string_lit_expansion(expr const & t, expr const & s) {
     return try_string_lit_expansion_core(s, t);
 }
 
-/** Takes a type of the form `A1 -> ... -> An-> I As`, checks that `I` is a (non-recursive) structure, and that each (instantiated) fields is itself either a proposition or a unit-like type*/
+/** A type is said to be "unit-like" if it is of the form `A1 -> ... -> An-> I As`, where `I` is a (non-recursive) structure, and where each (instantiated) fields of the structure are a proposition or themselves a unit-like. If a type has such a type, then all terms of that type are trivialle definitionally equal. */
 bool type_checker::is_unit_like(expr const & t) {
     buffer<expr> args;
-    buffer<expr> fvars;
     flet<local_ctx> save_lctx(m_lctx, m_lctx);
 
     expr I = whnf(t);
-    // If type is an arrow-type, we check if the final codomain is unit-like
+    // If type is a forall, we check if the final codomain is unit-like
     while (is_pi(I)) {
         expr hd = binding_domain(I);
         expr x  = m_lctx.mk_local_decl(m_st->m_ngen, binding_name(I), hd, binding_info(I));
-        fvars.push_back(x);
         I       = whnf(instantiate(binding_body(I), x));
     }
-    I = instantiate_rev(I, fvars.size(), fvars.data());
     I = get_app_args(I, args);
     if (!is_constant(I))
         return false;
@@ -1124,7 +1121,7 @@ bool type_checker::is_unit_like(expr const & t) {
         expr hd = instantiate_rev(binding_domain(ctor_ty), fields.size(), fields.data());
         if (!(is_prop(hd) || is_unit_like(hd)))
             return false;
-        expr x  = m_lctx.mk_local_decl(m_st->m_ngen, binding_name(ctor_ty), hd, binding_info(ctor_ty));
+        expr x = m_lctx.mk_local_decl(m_st->m_ngen, binding_name(ctor_ty), hd, binding_info(ctor_ty));
         fields.push_back(x);
         ctor_ty = binding_body(ctor_ty);
     }

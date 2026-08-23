@@ -24,7 +24,7 @@ name mk_rec_name(name const & I) {
     return I + name("rec");
 }
 
-/** \brief Return true if the given declaration is a non-recursive structure (an inductive type with one constructor and no indices). */
+/** \brief Return true if the given declaration is a non-recursive structure (a non-recursive inductive type with one constructor and no indices). */
 bool is_non_rec_structure(environment const & env, name const & decl_name) {
     constant_info I = env.get(decl_name);
     if (!I.is_inductive()) return false;

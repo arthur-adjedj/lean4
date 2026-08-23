@@ -2349,12 +2349,12 @@ private def isDefEqApp (t s : Expr) : MetaM Bool := do
     checkpointDefEq (Meta.isExprDefEqAux tFn s.getAppFn <&&> isDefEqArgs tFn t.getAppArgs s.getAppArgs)
 
 @[inline] private def cachedUnitLike? (e : Expr) : MetaM (Option Bool) := do
-  let key := mkExprConfigCacheKey e
+  let key ← mkExprConfigCacheKey e
   return (← get).cache.isUnitLike.find? key
 
 @[inline]
 private def cacheUnitLike (e : Expr) (b : Bool) : MetaM Bool := do
-  let key := mkExprConfigCacheKey e
+  let key ← mkExprConfigCacheKey e
   modifyUnitLikeCache (·.insert key b)
   return b
 
@@ -2379,7 +2379,7 @@ private partial def isUnitLikeType (e : Expr) : MetaM Bool :=
   or a dependent arrow for which the codomain is unit-like.
 -/
 private def isDefEqUnitLike (t : Expr) (s : Expr) : MetaM Bool := do
-  let tType  ← inferType t
+  let tType ← inferType t
   match (← cachedUnitLike? tType) with
     | some false => return false
     | some true => Meta.isExprDefEqAux tType (← inferType s)

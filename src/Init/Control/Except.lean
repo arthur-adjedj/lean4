@@ -62,7 +62,7 @@ then the result is the result of the second computation.
 
 This is the implementation of the `>>=` operator for `Except ε`.
 -/
-@[always_inline, inline]
+@[always_inline, inline, kernel_abbrev]
 protected def bind (ma : Except ε α) (f : α → Except ε β) : Except ε β :=
   match ma with
   | Except.error err => Except.error err

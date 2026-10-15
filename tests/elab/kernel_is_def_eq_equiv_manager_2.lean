@@ -14,7 +14,7 @@ def rcStep (x : Bool) (n : Nat) (ih : (m : Nat) → m < n → Bool) : Bool :=
   | k + 1 => ih k (Nat.lt_succ_self k)
 
 def rcRun (x : Bool) (n : Nat) (h : Acc (· < ·) n) : Bool :=
-  Acc.rec (fun m _ => rcStep x m) h
+  Acc.rec' (fun m _ => rcStep x m) h
 
 opaque rcOpaque : Acc (· < ·) 1 := Nat.lt_wfRel.wf.apply 1
 def rcA (x : Bool) := rcRun x 1 rcOpaque
@@ -25,8 +25,8 @@ theorem run_eq (x : Bool) (n : Nat) (h : Acc (· < ·) n) : rcRun x n h = x := b
   induction h with
   | intro n smaller ih =>
     cases n with
-    | zero => rfl
-    | succ n => simpa only [rcRun, rcStep] using ih n (Nat.lt_succ_self n)
+    | zero => rw [rcRun, Acc.rec'_eq, rcStep]
+    | succ n => rw [rcRun, Acc.rec'_eq, rcStep]; exact ih n (Nat.lt_succ_self n)
 
 theorem a_eq (x : Bool) : rcA x = x := run_eq x _ _
 theorem b_eq (x : Bool) : rcB x = x := run_eq x _ _

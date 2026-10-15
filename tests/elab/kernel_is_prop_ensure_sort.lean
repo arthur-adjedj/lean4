@@ -14,7 +14,7 @@ def step (x : Bool) (n : Nat) (ih : (m : Nat) → m < n → Bool) : Bool :=
   | k + 1 => ih k (Nat.lt_succ_self k)
 
 def run (x : Bool) (n : Nat) (h : Acc (· < ·) n) : Bool :=
-  Acc.rec (fun m _ => step x m) h
+  Acc.rec' (fun m _ => step x m) h
 
 opaque seed : Acc (· < ·) 1 := Nat.lt_wfRel.wf.apply 1
 def a := run false 1 seed
@@ -25,8 +25,8 @@ theorem run_eq (x : Bool) (n : Nat) (h : Acc (· < ·) n) : run x n h = x := by
   induction h with
   | intro n smaller ih =>
     cases n with
-    | zero => rfl
-    | succ n => simpa only [run, step] using ih n (Nat.lt_succ_self n)
+    | zero => rw [run, Acc.rec'_eq, step]
+    | succ n => rw [run, Acc.rec'_eq, step]; exact ih n (Nat.lt_succ_self n)
 
 def P : Prop := a = b
 def Q : Prop := a = c

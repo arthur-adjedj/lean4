@@ -531,35 +531,29 @@ public:
             return false;
         }
 
+        if (is_rec()) {
+            /* Recursive inductive predicates (e.g. `Acc`, `WellFounded`) only
+               eliminate into Prop.  This blocks `large elimination` of proof terms
+               obtained by recursive constructions; subsingleton-style products like
+               `And`, `Eq`, `Unit`, `Iff` are non-recursive and remain unaffected. */
+            return true;
+        }
+
         /* We have only one constructor, the final check is, the type of each argument
-           that is not a parameter:
-            1- It must live in Prop, *OR*
-            2- It must occur in the return type. (this is essentially what is called a non-uniform parameter in Coq).
-               We can justify 2 by observing that this information is not a *secret* it is part of the type.
-               By eliminating to a non-proposition, we would not be revealing anything that is not already known. */
+           that is not a parameter must live in Prop. */
         constructor const & cnstr = head(m_ind_types[0].get_cnstrs());
         expr type  = constructor_type(cnstr);
         unsigned i = 0;
-        buffer<expr> to_check; /* Arguments that we must check if occur in the result type */
         while (is_pi(type)) {
             expr fvar = mk_local_decl_for(type);
             if (i >= m_nparams) {
                 expr s = tc().ensure_type(binding_domain(type));
                 if (!normalizes_to_zero(sort_level(s))) {
-                    /* Current argument is not in Prop (i.e., condition 1 failed).
-                       We save it in to_check to be able to try condition 2 above. */
-                    to_check.push_back(fvar);
+                    return true;
                 }
             }
             type = instantiate(binding_body(type), fvar);
             i++;
-        }
-        buffer<expr> result_args;
-        get_app_args(type, result_args);
-        /* Check condition 2: every argument in to_check must occur in result_args */
-        for (expr const & arg : to_check) {
-            if (std::find(result_args.begin(), result_args.end(), arg) == result_args.end())
-                return true; /* Condition 2 failed */
         }
         return false;
     }

@@ -14,7 +14,7 @@ def rcStep (x : Bool) (n : Nat) (ih : (m : Nat) → m < n → Bool) : Bool :=
   | k + 1 => ih k (Nat.lt_succ_self k)
 
 def rcRun (x : Bool) (n : Nat) (h : Acc (· < ·) n) : Bool :=
-  Acc.rec (fun m _ => rcStep x m) h
+  Acc.rec' (fun m _ => rcStep x m) h
 
 opaque rcOpaque : Acc (· < ·) 1 := Nat.lt_wfRel.wf.apply 1
 def rcA (x : Bool) := rcRun x 1 rcOpaque

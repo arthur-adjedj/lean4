@@ -2290,7 +2290,7 @@ where
     | some t, some s => Meta.isExprDefEqAux t s
     | _, _ => Meta.isExprDefEqAux t s
 
-private def isDefEqProj : Expr → Expr → MetaM Bool
+private def isDefEqProj' : Expr → Expr → MetaM Bool
   | .proj m i t, .proj n j s => do
     /- When `m` is a class, the projection's parameter is instance-implicit.
        We bump the transparency to `.implicit` (via `withImplicitConfig`) so that all
@@ -2352,6 +2352,14 @@ where
       processAssignment' s ctorApp
     else
       return false
+
+private def isDefEqProj (t s : Expr): MetaM Bool := do
+  let tFn := t.getAppFn
+  let sFn := s.getAppFn
+  if ← isDefEqProj' tFn sFn then
+    isDefEqArgs tFn t.getAppArgs s.getAppArgs
+  else
+    return false
 
 /--
   Given applications `t` and `s` that are in WHNF (modulo the current transparency setting),

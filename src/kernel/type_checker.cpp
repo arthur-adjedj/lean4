@@ -1181,10 +1181,12 @@ bool type_checker::is_def_eq_core(expr const & t, expr const & s) {
     if (is_fvar(t_n) && is_fvar(s_n) && fvar_name(t_n) == fvar_name(s_n))
         return true;
 
-    if (is_proj(t_n) && is_proj(s_n) && proj_sname(t_n) == proj_sname(s_n) && proj_idx(t_n) == proj_idx(s_n)) {
-        expr t_c = proj_expr(t_n);
-        expr s_c = proj_expr(s_n);
-        if (lazy_delta_proj_reduction(t_c, s_c, proj_sname(t_n), proj_idx(t_n)))
+    expr t_n_fn = get_app_fn(t_n);
+    expr s_n_fn = get_app_fn(s_n);
+    if (is_proj(t_n_fn) && is_proj(s_n_fn) && proj_sname(t_n_fn) == proj_sname(s_n_fn) && proj_idx(t_n_fn) == proj_idx(s_n_fn)) {
+        expr t_c = proj_expr(t_n_fn);
+        expr s_c = proj_expr(s_n_fn);
+        if (lazy_delta_proj_reduction(t_c, s_c, proj_sname(t_n), proj_idx(t_n)) && is_def_eq_args(t_n,s_n))
             return true;
     }
 

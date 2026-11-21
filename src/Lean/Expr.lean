@@ -1123,6 +1123,10 @@ def mdataExpr! : Expr → Expr
   | mdata _ e => e
   | _         => panic! "mdata expression expected"
 
+def projTypeName! : Expr → Name
+  | proj n _ _ => n
+  | _          => panic! "proj expression expected"
+
 def projExpr! : Expr → Expr
   | proj _ _ e => e
   | _          => panic! "proj expression expected"
